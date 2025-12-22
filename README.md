@@ -1,6 +1,6 @@
 # SimRate Sharp
 
-A modern HUD overlay for monitoring and controlling simulation rate in **Microsoft Flight Simulator 2024**.
+An overlay for monitoring and controlling simulation rate in **Microsoft Flight Simulator 2024**.
 
 ## Features
 
