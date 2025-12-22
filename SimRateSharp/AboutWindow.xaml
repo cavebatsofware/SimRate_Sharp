@@ -1,0 +1,131 @@
+<!--
+    * SimRateSharp is a simple overlay application for MSFS to display
+    * simulation rate, ground speed, and reset sim-rate via joystick button.
+    *
+    * Copyright (C) 2025 Grant DeFayette / CavebatSoftware LLC 
+    *
+    * This program is free software: you can redistribute it and/or modify
+    * it under the terms of the GNU General Public License as published by
+    * the Free Software Foundation, version 3 of the License.
+    *
+    * This program is distributed in the hope that it will be useful,
+    * but WITHOUT ANY WARRANTY; without even the implied warranty of
+    * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    * GNU General Public License for more details.
+    *
+    * You should have received a copy of the GNU General Public License
+    * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Window x:Class="SimRateSharp.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About SimRate Sharp"
+        Height="350"
+        Width="450"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="Transparent"
+        AllowsTransparency="True"
+        WindowStyle="None">
+
+    <Border Background="#E0000000"
+            BorderBrush="#40FFFFFF"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="30">
+        <Border.Effect>
+            <DropShadowEffect Color="Black"
+                            Opacity="0.5"
+                            BlurRadius="15"
+                            ShadowDepth="0"/>
+        </Border.Effect>
+
+        <StackPanel>
+            <!-- Title -->
+            <TextBlock Text="SimRate Sharp"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,10"/>
+
+            <TextBlock Text="Sim Rate Monitor and Control for MSFS"
+                       FontSize="14"
+                       Foreground="#B0B0B0"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,20"/>
+
+            <!-- Version -->
+            <TextBlock x:Name="VersionText"
+                       Text="Version 1.0.0"
+                       FontSize="12"
+                       Foreground="#808080"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,20"/>
+
+            <!-- Copyright -->
+            <TextBlock Text="Copyright © 2025 Grant DeFayette / CavebatSoftware LLC"
+                       FontSize="12"
+                       Foreground="#B0B0B0"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,10"/>
+
+            <!-- Description -->
+            <TextBlock TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       FontSize="11"
+                       Foreground="#A0A0A0"
+                       Margin="0,0,0,20">
+                <Run Text="An overlay for monitoring and resetting"/>
+                <LineBreak/>
+                <Run Text="simulation rate in Microsoft Flight Simulator 2024"/>
+            </TextBlock>
+
+            <!-- GitHub Link -->
+            <TextBlock HorizontalAlignment="Center"
+                       Margin="0,0,0,20">
+                <Hyperlink x:Name="GitHubLink"
+                          NavigateUri="https://github.com/cavebatsofware/SimRate_Sharp"
+                          RequestNavigate="GitHubLink_RequestNavigate"
+                          Foreground="#00D9FF"
+                          TextDecorations="None">
+                    <Run Text="View on GitHub"/>
+                </Hyperlink>
+            </TextBlock>
+
+            <!-- Close Button -->
+            <Button Content="Close"
+                    Width="100"
+                    Height="30"
+                    HorizontalAlignment="Center"
+                    Click="CloseButton_Click"
+                    Background="#40FFFFFF"
+                    Foreground="White"
+                    BorderThickness="0"
+                    FontSize="12"
+                    Cursor="Hand">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="4"
+                                            Padding="10,5">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#60FFFFFF"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+    </Border>
+</Window>

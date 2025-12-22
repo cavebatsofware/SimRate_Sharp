@@ -1,3 +1,21 @@
+/* SimRateSharp is a simple overlay application for MSFS to display
+ * simulation rate, ground speed, and reset sim-rate via joystick button.
+ *
+ * Copyright (C) 2025 Grant DeFayette / CavebatSoftware LLC 
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+ 
 using System;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -13,24 +31,43 @@ public class SimConnectManager
     private readonly DispatcherTimer _pollTimer;
     private IntPtr _handle;
     private bool _isConnected;
+    private double _currentSimRate = 1.0;
 
-    public event EventHandler<double>? SimRateUpdated;
+    public event EventHandler<SimData>? DataUpdated;
     public event EventHandler<bool>? ConnectionStatusChanged;
 
     private enum DEFINITIONS
     {
-        SimRateDefinition
+        SimDataDefinition
     }
 
     private enum DATA_REQUESTS
     {
-        SimRateRequest
+        SimDataRequest
+    }
+
+    private enum EVENTS
+    {
+        SimRateIncrease,
+        SimRateDecrease
+    }
+
+    private enum NOTIFICATION_GROUPS
+    {
+        SimRateGroup
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    public struct SimRateStruct
+    public struct SimDataStruct
     {
         public double SimulationRate;
+        public double GroundSpeed;
+    }
+
+    public class SimData
+    {
+        public double SimulationRate { get; set; }
+        public double GroundSpeed { get; set; }
     }
 
     public SimConnectManager(IntPtr handle)
@@ -67,7 +104,7 @@ public class SimConnectManager
 
             // Define the data structure
             _simConnect.AddToDataDefinition(
-                DEFINITIONS.SimRateDefinition,
+                DEFINITIONS.SimDataDefinition,
                 "SIMULATION RATE",
                 "Number",
                 SIMCONNECT_DATATYPE.FLOAT64,
@@ -75,7 +112,20 @@ public class SimConnectManager
                 SimConnect.SIMCONNECT_UNUSED
             );
 
-            _simConnect.RegisterDataDefineStruct<SimRateStruct>(DEFINITIONS.SimRateDefinition);
+            _simConnect.AddToDataDefinition(
+                DEFINITIONS.SimDataDefinition,
+                "GROUND VELOCITY",
+                "Knots",
+                SIMCONNECT_DATATYPE.FLOAT64,
+                0.0f,
+                SimConnect.SIMCONNECT_UNUSED
+            );
+
+            _simConnect.RegisterDataDefineStruct<SimDataStruct>(DEFINITIONS.SimDataDefinition);
+
+            // Map sim rate events
+            _simConnect.MapClientEventToSimEvent(EVENTS.SimRateIncrease, "SIM_RATE_INCR");
+            _simConnect.MapClientEventToSimEvent(EVENTS.SimRateDecrease, "SIM_RATE_DECR");
 
             // Subscribe to events
             _simConnect.OnRecvSimobjectDataBytype += SimConnect_OnRecvSimobjectDataBytype;
@@ -88,9 +138,10 @@ public class SimConnectManager
 
             ConnectionStatusChanged?.Invoke(this, true);
         }
-        catch (COMException)
+        catch (COMException ex)
         {
             // MSFS not running or SimConnect not available
+            Logger.WriteLine($"[SimConnectManager] Failed to connect: {ex.Message}");
             _simConnect = null;
             _isConnected = false;
         }
@@ -108,24 +159,30 @@ public class SimConnectManager
         try
         {
             _simConnect.RequestDataOnSimObjectType(
-                DATA_REQUESTS.SimRateRequest,
-                DEFINITIONS.SimRateDefinition,
+                DATA_REQUESTS.SimDataRequest,
+                DEFINITIONS.SimDataDefinition,
                 0,
                 SIMCONNECT_SIMOBJECT_TYPE.USER
             );
         }
-        catch (COMException)
+        catch (COMException ex)
         {
+            Logger.WriteLine($"[SimConnectManager] Failed to request data: {ex.Message}");
             Disconnect();
         }
     }
 
     private void SimConnect_OnRecvSimobjectDataBytype(SimConnect sender, SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE data)
     {
-        if (data.dwRequestID == (uint)DATA_REQUESTS.SimRateRequest)
+        if (data.dwRequestID == (uint)DATA_REQUESTS.SimDataRequest)
         {
-            var simRateData = (SimRateStruct)data.dwData[0];
-            SimRateUpdated?.Invoke(this, simRateData.SimulationRate);
+            var simData = (SimDataStruct)data.dwData[0];
+            _currentSimRate = simData.SimulationRate;
+            DataUpdated?.Invoke(this, new SimData
+            {
+                SimulationRate = simData.SimulationRate,
+                GroundSpeed = simData.GroundSpeed
+            });
         }
     }
 
@@ -136,7 +193,8 @@ public class SimConnectManager
 
     private void SimConnect_OnRecvException(SimConnect sender, SIMCONNECT_RECV_EXCEPTION data)
     {
-        Console.WriteLine($"SimConnect Exception: {data.dwException}");
+        Logger.WriteLine($"[SimConnectManager] SimConnect Exception ID: {data.dwException}");
+        Logger.WriteLine($"[SimConnectManager] Exception details - SendID: {data.dwSendID}, Index: {data.dwIndex}");
     }
 
     private void Disconnect()
@@ -163,6 +221,63 @@ public class SimConnectManager
     public void ReceiveMessage()
     {
         _simConnect?.ReceiveMessage();
+    }
+
+    public void SetSimulationRate(double targetRate)
+    {
+        if (_simConnect == null || !_isConnected) return;
+
+        try
+        {
+            // Calculate how many steps we need to reach the target rate
+            // MSFS sim rates: 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128
+            double diff = targetRate - _currentSimRate;
+
+            if (Math.Abs(diff) < 0.01) return; // Already at target rate
+
+            EVENTS eventToSend = diff > 0 ? EVENTS.SimRateIncrease : EVENTS.SimRateDecrease;
+            int steps = (int)Math.Abs(Math.Round(Math.Log(Math.Abs(diff) + 1, 2)));
+
+            // Send the appropriate number of increase/decrease events
+            // We'll use a different approach: just send events until we're close
+            if (targetRate < _currentSimRate)
+            {
+                // Decreasing - send decrease events
+                while (_currentSimRate > targetRate + 0.01)
+                {
+                    _simConnect.TransmitClientEvent(
+                        SimConnect.SIMCONNECT_OBJECT_ID_USER,
+                        EVENTS.SimRateDecrease,
+                        0,
+                        NOTIFICATION_GROUPS.SimRateGroup,
+                        SIMCONNECT_EVENT_FLAG.GROUPID_IS_PRIORITY
+                    );
+                    // Estimate new rate (each decrease roughly halves it)
+                    _currentSimRate = Math.Max(0.25, _currentSimRate / 2);
+                }
+            }
+            else
+            {
+                // Increasing - send increase events
+                while (_currentSimRate < targetRate - 0.01)
+                {
+                    _simConnect.TransmitClientEvent(
+                        SimConnect.SIMCONNECT_OBJECT_ID_USER,
+                        EVENTS.SimRateIncrease,
+                        0,
+                        NOTIFICATION_GROUPS.SimRateGroup,
+                        SIMCONNECT_EVENT_FLAG.GROUPID_IS_PRIORITY
+                    );
+                    // Estimate new rate (each increase roughly doubles it)
+                    _currentSimRate = Math.Min(128, _currentSimRate * 2);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.WriteLine($"[SimConnectManager] Failed to set sim rate: {ex.Message}");
+            Logger.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
     }
 
     public void Shutdown()

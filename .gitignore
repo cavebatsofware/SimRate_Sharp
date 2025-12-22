@@ -1,2 +1,2 @@
-./SimRateSharp/bin/*
-./SimRateSharp/obj/*
+SimRateSharp/bin/**
+SimRateSharp/obj/**

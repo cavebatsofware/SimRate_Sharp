@@ -1,4 +1,22 @@
-﻿using System;
+﻿/* SimRateSharp is a simple overlay application for MSFS to display
+ * simulation rate, ground speed, and reset sim-rate via joystick button.
+ *
+ * Copyright (C) 2025 Grant DeFayette / CavebatSoftware LLC 
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+using System;
 using System.Configuration;
 using System.Data;
 using System.IO;
@@ -15,6 +33,22 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Check for debug mode flag
+        bool debugMode = false;
+        foreach (string arg in e.Args)
+        {
+            if (arg.Equals("--debug", StringComparison.OrdinalIgnoreCase) ||
+                arg.Equals("/debug", StringComparison.OrdinalIgnoreCase))
+            {
+                debugMode = true;
+                break;
+            }
+        }
+
+        // Initialize logger
+        Logger.Initialize(debugMode);
+        Logger.WriteLine($"SimRate Sharp starting (Debug Mode: {debugMode})");
 
         // Global exception handlers
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -35,9 +69,18 @@ public partial class App : Application
         e.Handled = true;
     }
 
+    protected override void OnExit(ExitEventArgs e)
+    {
+        Logger.Shutdown();
+        base.OnExit(e);
+    }
+
     private void LogException(Exception? ex, string source)
     {
         if (ex == null) return;
+
+        Logger.WriteLine($"EXCEPTION in {source}: {ex.Message}");
+        Logger.WriteLine($"Stack trace: {ex.StackTrace}");
 
         try
         {

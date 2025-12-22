@@ -1,4 +1,22 @@
-﻿<Window x:Class="SimRateSharp.MainWindow"
+﻿<!--
+    * SimRateSharp is a simple overlay application for MSFS to display
+    * simulation rate, ground speed, and reset sim-rate via joystick button.
+    *
+    * Copyright (C) 2025 Grant DeFayette / CavebatSoftware LLC 
+    *
+    * This program is free software: you can redistribute it and/or modify
+    * it under the terms of the GNU General Public License as published by
+    * the Free Software Foundation, version 3 of the License.
+    *
+    * This program is distributed in the hope that it will be useful,
+    * but WITHOUT ANY WARRANTY; without even the implied warranty of
+    * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    * GNU General Public License for more details.
+    *
+    * You should have received a copy of the GNU General Public License
+    * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Window x:Class="SimRateSharp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,43 +24,150 @@
         xmlns:local="clr-namespace:SimRateSharp"
         mc:Ignorable="d"
         Title="MSFS Sim Rate Monitor"
-        Height="200"
-        Width="400"
-        WindowStartupLocation="CenterScreen"
-        ResizeMode="CanMinimize">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        Height="80"
+        Width="500"
+        WindowStartupLocation="Manual"
+        ResizeMode="NoResize"
+        Background="Transparent"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        Topmost="True"
+        ShowInTaskbar="False">
 
-        <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock x:Name="StatusTextBlock"
-                       Text="Connecting to MSFS..."
-                       FontSize="16"
-                       Foreground="Gray"
-                       HorizontalAlignment="Center"
-                       Margin="0,0,0,10"/>
+    <Window.Resources>
+        <!-- Modern Button Style -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#60FFB300"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#A0FFB300"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#FFFFB300"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
 
-            <TextBlock x:Name="SimRateTextBlock"
-                       Text="--"
-                       FontSize="48"
-                       FontWeight="Bold"
-                       HorizontalAlignment="Center"/>
-        </StackPanel>
+    <Border x:Name="MainBorder"
+            Background="#C0000000"
+            BorderBrush="#40FFFFFF"
+            BorderThickness="1"
+            CornerRadius="6"
+            Padding="20,12"
+            MouseLeftButtonDown="Border_MouseLeftButtonDown">
+        <Border.Effect>
+            <DropShadowEffect Color="Black"
+                            Opacity="0.5"
+                            BlurRadius="15"
+                            ShadowDepth="0"/>
+        </Border.Effect>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10" VerticalAlignment="Center">
-            <CheckBox x:Name="AlwaysOnTopCheckBox"
-                      Content="Always on Top"
-                      IsChecked="False"
-                      Checked="AlwaysOnTopCheckBox_Checked"
-                      Unchecked="AlwaysOnTopCheckBox_Unchecked"
-                      VerticalAlignment="Center"
-                      Margin="0,0,20,0"/>
-            <TextBlock Text="Update Interval: 500ms"
-                       FontSize="12"
-                       Foreground="DarkGray"
-                       VerticalAlignment="Center"/>
-        </StackPanel>
-    </Grid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Capture Mode Overlay -->
+            <Border x:Name="CaptureOverlay"
+                    Grid.ColumnSpan="5"
+                    Background="#E0000000"
+                    CornerRadius="6"
+                    Visibility="Collapsed"
+                    Panel.ZIndex="100">
+                <TextBlock x:Name="CaptureOverlayText"
+                           Text="Press any joystick button..."
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="#FFB300"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           TextAlignment="Center">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="#FFB300"
+                                        Opacity="0.8"
+                                        BlurRadius="10"
+                                        ShadowDepth="0"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </Border>
+
+            <!-- Sim Rate Display -->
+            <StackPanel Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="⚡ SIM RATE"
+                           FontSize="10"
+                           Foreground="#80FFFFFF"
+                           HorizontalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,2"/>
+                <TextBlock x:Name="SimRateTextBlock"
+                           Text="--"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Foreground="#00D9FF"
+                           HorizontalAlignment="Center">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="#00D9FF"
+                                        Opacity="0.6"
+                                        BlurRadius="8"
+                                        ShadowDepth="0"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </StackPanel>
+
+            <!-- Ground Speed Display -->
+            <StackPanel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="🛫 GROUND SPEED"
+                           FontSize="10"
+                           Foreground="#80FFFFFF"
+                           HorizontalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,2"/>
+                <TextBlock x:Name="GroundSpeedTextBlock"
+                           Text="-- kts"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Foreground="#00FF88"
+                           HorizontalAlignment="Center">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="#00FF88"
+                                        Opacity="0.4"
+                                        BlurRadius="8"
+                                        ShadowDepth="0"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </StackPanel>
+
+            <!-- 1x Reset Button -->
+            <Button x:Name="ResetButton"
+                    Grid.Column="4"
+                    Content="1x"
+                    Style="{StaticResource ModernButton}"
+                    Click="ResetButton_Click"
+                    VerticalAlignment="Center"
+                    MinWidth="50"/>
+        </Grid>
+    </Border>
 </Window>
