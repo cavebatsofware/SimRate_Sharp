@@ -41,16 +41,15 @@ Source: "SimRateSharp\bin\Release\net10.0-windows\{#MyAppExeName}"; DestDir: "{a
 Source: "SimRateSharp\bin\Release\net10.0-windows\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "SimRateSharp\bin\Release\net10.0-windows\*.json"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion isreadme
-Source: "IMPLEMENTATION_NOTES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName} (Debug Mode)"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--debug"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: startupicon
 
 [Run]
-Name: "{group}\{#MyAppName} (Debug Mode)"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--debug"
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
