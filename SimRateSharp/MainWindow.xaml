@@ -89,11 +89,15 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <!-- Capture Mode Overlay -->
             <Border x:Name="CaptureOverlay"
-                    Grid.ColumnSpan="7"
+                    Grid.ColumnSpan="11"
                     Background="#E0000000"
                     CornerRadius="6"
                     Visibility="Collapsed"
@@ -167,8 +171,60 @@
             <!-- Separator 2 -->
             <Border x:Name="Separator2" Grid.Column="3" Width="20"/>
 
+            <!-- AGL Display -->
+            <StackPanel x:Name="AGLPanel" Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="📏 AGL"
+                           FontSize="10"
+                           Foreground="#80FFFFFF"
+                           HorizontalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,2"/>
+                <TextBlock x:Name="AGLTextBlock"
+                           Text="-- ft"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Foreground="#FF9500"
+                           HorizontalAlignment="Center">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="#FF9500"
+                                        Opacity="0.4"
+                                        BlurRadius="8"
+                                        ShadowDepth="0"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </StackPanel>
+
+            <!-- Separator 3 -->
+            <Border x:Name="Separator3" Grid.Column="5" Width="20"/>
+
+            <!-- Glide Slope Display -->
+            <StackPanel x:Name="GlideSlopePanel" Grid.Column="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="📐 GLIDE"
+                           FontSize="10"
+                           Foreground="#80FFFFFF"
+                           HorizontalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,2"/>
+                <TextBlock x:Name="GlideSlopeTextBlock"
+                           Text="--°"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Foreground="#9C27B0"
+                           HorizontalAlignment="Center">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="#9C27B0"
+                                        Opacity="0.4"
+                                        BlurRadius="8"
+                                        ShadowDepth="0"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </StackPanel>
+
+            <!-- Separator 4 -->
+            <Border x:Name="Separator4" Grid.Column="7" Width="20"/>
+
             <!-- Wind Display -->
-            <StackPanel x:Name="WindPanel" Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel x:Name="WindPanel" Grid.Column="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="💨 WIND"
                            FontSize="10"
                            Foreground="#80FFFFFF"
@@ -246,12 +302,12 @@
                 </Grid>
             </StackPanel>
 
-            <!-- Separator 3 -->
-            <Border x:Name="Separator3" Grid.Column="5" Width="20"/>
+            <!-- Separator 5 -->
+            <Border x:Name="Separator5" Grid.Column="9" Width="20"/>
 
             <!-- 1x Reset Button -->
             <Button x:Name="ResetButton"
-                    Grid.Column="6"
+                    Grid.Column="10"
                     Content="1x"
                     Style="{StaticResource ModernButton}"
                     Click="ResetButton_Click"

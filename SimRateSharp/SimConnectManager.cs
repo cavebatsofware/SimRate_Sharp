@@ -65,6 +65,8 @@ public class SimConnectManager
         public double WindSpeed;
         public double WindDirection;
         public double PlaneHeading;
+        public double AltitudeAboveGround;
+        public double VerticalSpeed;
     }
 
     public class SimData
@@ -74,9 +76,11 @@ public class SimConnectManager
         public double WindSpeed { get; set; }
         public double WindDirection { get; set; }
         public double PlaneHeading { get; set; }
+        public double AltitudeAboveGround { get; set; }
+        public double VerticalSpeed { get; set; }
     }
 
-    public SimConnectManager(IntPtr handle)
+    public SimConnectManager(IntPtr handle, int pollingRateMs = 500)
     {
         _handle = handle;
         _isConnected = false;
@@ -88,16 +92,21 @@ public class SimConnectManager
         };
         _reconnectTimer.Tick += ReconnectTimer_Tick;
 
-        // Poll timer - request data every 500ms
+        // Poll timer - request data at specified rate
         _pollTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(500)
+            Interval = TimeSpan.FromMilliseconds(pollingRateMs)
         };
         _pollTimer.Tick += PollTimer_Tick;
 
         // Start trying to connect
         _reconnectTimer.Start();
         TryConnect();
+    }
+
+    public void SetPollingRate(int milliseconds)
+    {
+        _pollTimer.Interval = TimeSpan.FromMilliseconds(milliseconds);
     }
 
     private void TryConnect()
@@ -149,6 +158,24 @@ public class SimConnectManager
                 DEFINITIONS.SimDataDefinition,
                 "PLANE HEADING DEGREES TRUE",
                 "Degrees",
+                SIMCONNECT_DATATYPE.FLOAT64,
+                0.0f,
+                SimConnect.SIMCONNECT_UNUSED
+            );
+
+            _simConnect.AddToDataDefinition(
+                DEFINITIONS.SimDataDefinition,
+                "PLANE ALT ABOVE GROUND",
+                "Feet",
+                SIMCONNECT_DATATYPE.FLOAT64,
+                0.0f,
+                SimConnect.SIMCONNECT_UNUSED
+            );
+
+            _simConnect.AddToDataDefinition(
+                DEFINITIONS.SimDataDefinition,
+                "VERTICAL SPEED",
+                "Feet per minute",
                 SIMCONNECT_DATATYPE.FLOAT64,
                 0.0f,
                 SimConnect.SIMCONNECT_UNUSED
@@ -217,7 +244,9 @@ public class SimConnectManager
                 GroundSpeed = simData.GroundSpeed,
                 WindSpeed = simData.WindSpeed,
                 WindDirection = simData.WindDirection,
-                PlaneHeading = simData.PlaneHeading
+                PlaneHeading = simData.PlaneHeading,
+                AltitudeAboveGround = simData.AltitudeAboveGround,
+                VerticalSpeed = simData.VerticalSpeed
             });
         }
     }

@@ -63,25 +63,47 @@ public partial class MainWindow : Window
     {
         SimRatePanel.Visibility = _settings.ShowSimRate ? Visibility.Visible : Visibility.Collapsed;
         GroundSpeedPanel.Visibility = _settings.ShowGroundSpeed ? Visibility.Visible : Visibility.Collapsed;
+        AGLPanel.Visibility = _settings.ShowAGL ? Visibility.Visible : Visibility.Collapsed;
+        GlideSlopePanel.Visibility = _settings.ShowGlideSlope ? Visibility.Visible : Visibility.Collapsed;
         WindPanel.Visibility = _settings.ShowWind ? Visibility.Visible : Visibility.Collapsed;
 
-        // Hide separators intelligently - only show between visible panels
-        // Separator1: between SimRate and GroundSpeed
-        Separator1.Visibility = (_settings.ShowSimRate && _settings.ShowGroundSpeed) ? Visibility.Visible : Visibility.Collapsed;
+        // Collect visible panels in order
+        var visiblePanels = new List<string>();
+        if (_settings.ShowSimRate) visiblePanels.Add("SimRate");
+        if (_settings.ShowGroundSpeed) visiblePanels.Add("GroundSpeed");
+        if (_settings.ShowAGL) visiblePanels.Add("AGL");
+        if (_settings.ShowGlideSlope) visiblePanels.Add("GlideSlope");
+        if (_settings.ShowWind) visiblePanels.Add("Wind");
 
-        // Separator2: between GroundSpeed and Wind
-        Separator2.Visibility = (_settings.ShowGroundSpeed && _settings.ShowWind) ? Visibility.Visible : Visibility.Collapsed;
+        // Hide all separators initially
+        Separator1.Visibility = Visibility.Collapsed;
+        Separator2.Visibility = Visibility.Collapsed;
+        Separator3.Visibility = Visibility.Collapsed;
+        Separator4.Visibility = Visibility.Collapsed;
+        Separator5.Visibility = Visibility.Collapsed;
 
-        // Separator3: before button (only if Wind is visible)
-        Separator3.Visibility = _settings.ShowWind ? Visibility.Visible : Visibility.Collapsed;
-
-        // Special case: if SimRate is hidden but GroundSpeed is shown, show Separator2 if Wind is also shown
-        if (!_settings.ShowGroundSpeed && _settings.ShowSimRate && _settings.ShowWind)
+        // Show separators between consecutive visible panels
+        if (visiblePanels.Count >= 2)
         {
-            Separator2.Visibility = Visibility.Visible;
+            for (int i = 0; i < visiblePanels.Count - 1; i++)
+            {
+                // Show separator between panel[i] and panel[i+1]
+                if (i == 0 && visiblePanels.Count > 1)
+                    Separator1.Visibility = Visibility.Visible;
+                if (i == 1 && visiblePanels.Count > 2)
+                    Separator2.Visibility = Visibility.Visible;
+                if (i == 2 && visiblePanels.Count > 3)
+                    Separator3.Visibility = Visibility.Visible;
+                if (i == 3 && visiblePanels.Count > 4)
+                    Separator4.Visibility = Visibility.Visible;
+            }
         }
 
-        // WPF SizeToContent automatically adjusts window size - no manual width calculation needed
+        // Separator5: before button (only if at least one panel is visible)
+        if (visiblePanels.Count > 0)
+            Separator5.Visibility = Visibility.Visible;
+
+        // WPF SizeToContent automatically adjusts window size
     }
 
     private void CreateContextMenu()
@@ -98,6 +120,14 @@ public partial class MainWindow : Window
         var groundSpeedItem = new MenuItem { Header = "Ground Speed", IsCheckable = true, IsChecked = _settings.ShowGroundSpeed };
         groundSpeedItem.Click += (s, e) => ToggleDisplay("GroundSpeed", groundSpeedItem.IsChecked);
         displayMenuItem.Items.Add(groundSpeedItem);
+
+        var aglItem = new MenuItem { Header = "AGL", IsCheckable = true, IsChecked = _settings.ShowAGL };
+        aglItem.Click += (s, e) => ToggleDisplay("AGL", aglItem.IsChecked);
+        displayMenuItem.Items.Add(aglItem);
+
+        var glideSlopeItem = new MenuItem { Header = "Glide Slope", IsCheckable = true, IsChecked = _settings.ShowGlideSlope };
+        glideSlopeItem.Click += (s, e) => ToggleDisplay("GlideSlope", glideSlopeItem.IsChecked);
+        displayMenuItem.Items.Add(glideSlopeItem);
 
         var windItem = new MenuItem { Header = "Wind", IsCheckable = true, IsChecked = _settings.ShowWind };
         windItem.Click += (s, e) => ToggleDisplay("Wind", windItem.IsChecked);
@@ -116,6 +146,27 @@ public partial class MainWindow : Window
             opacityMenuItem.Items.Add(item);
         }
         contextMenu.Items.Add(opacityMenuItem);
+
+        // Polling rate submenu
+        var pollingMenuItem = new MenuItem { Header = "Polling Rate" };
+        var pollingRates = new[]
+        {
+            (250, "250ms (may impact performance)"),
+            (500, "500ms (fast)"),
+            (750, "750ms"),
+            (1000, "1000ms"),
+            (2000, "2000ms (slow)")
+        };
+
+        foreach (var (ms, label) in pollingRates)
+        {
+            var item = new MenuItem { Header = label };
+            if (_settings.PollingRateMs == ms)
+                item.IsChecked = true;
+            item.Click += (s, e) => SetPollingRate(ms);
+            pollingMenuItem.Items.Add(item);
+        }
+        contextMenu.Items.Add(pollingMenuItem);
 
         contextMenu.Items.Add(new Separator());
 
@@ -339,6 +390,16 @@ public partial class MainWindow : Window
         _settings.Save();
     }
 
+    private void SetPollingRate(int milliseconds)
+    {
+        _settings.PollingRateMs = milliseconds;
+        _settings.Save();
+        _simConnectManager?.SetPollingRate(milliseconds);
+
+        // Recreate context menu to update checkmark
+        CreateContextMenu();
+    }
+
     private void ToggleDisplay(string displayName, bool isVisible)
     {
         switch (displayName)
@@ -348,6 +409,12 @@ public partial class MainWindow : Window
                 break;
             case "GroundSpeed":
                 _settings.ShowGroundSpeed = isVisible;
+                break;
+            case "AGL":
+                _settings.ShowAGL = isVisible;
+                break;
+            case "GlideSlope":
+                _settings.ShowGlideSlope = isVisible;
                 break;
             case "Wind":
                 _settings.ShowWind = isVisible;
@@ -367,8 +434,8 @@ public partial class MainWindow : Window
         HwndSource source = HwndSource.FromHwnd(handle);
         source.AddHook(HandleSimConnectMessage);
 
-        // Initialize SimConnect manager
-        _simConnectManager = new SimConnectManager(handle);
+        // Initialize SimConnect manager with polling rate
+        _simConnectManager = new SimConnectManager(handle, _settings.PollingRateMs);
         _simConnectManager.DataUpdated += SimConnectManager_DataUpdated;
         _simConnectManager.ConnectionStatusChanged += SimConnectManager_ConnectionStatusChanged;
 
@@ -429,6 +496,20 @@ public partial class MainWindow : Window
             SimRateTextBlock.Text = $"{data.SimulationRate:F2}x";
             GroundSpeedTextBlock.Text = $"{data.GroundSpeed:F0} kts";
 
+            // Update AGL display
+            AGLTextBlock.Text = $"{data.AltitudeAboveGround:F0} ft";
+
+            // Calculate glide slope angle
+            // Glide slope = arctan(vertical speed / horizontal speed)
+            // VS is in ft/min, GS is in knots. Convert GS to ft/min: 1 knot = 101.269 ft/min
+            double glideSlopeAngle = 0;
+            if (data.GroundSpeed > 1) // Only calculate if moving
+            {
+                double groundSpeedFtPerMin = data.GroundSpeed * 101.269;
+                glideSlopeAngle = Math.Atan2(data.VerticalSpeed, groundSpeedFtPerMin) * (180 / Math.PI);
+            }
+            GlideSlopeTextBlock.Text = $"{glideSlopeAngle:F1}°";
+
             // Calculate relative wind direction
             // Wind direction is where wind is coming FROM
             // Relative angle: positive = wind from right, negative = wind from left
@@ -460,6 +541,8 @@ public partial class MainWindow : Window
             {
                 SimRateTextBlock.Text = "--";
                 GroundSpeedTextBlock.Text = "-- kts";
+                AGLTextBlock.Text = "-- ft";
+                GlideSlopeTextBlock.Text = "--°";
                 WindSpeedTextBlock.Text = "-- kts";
                 WindAngleTextBlock.Text = "--°";
             }

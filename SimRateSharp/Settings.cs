@@ -27,13 +27,16 @@ public class Settings
     public double WindowX { get; set; } = 100;
     public double WindowY { get; set; } = 100;
     public double Opacity { get; set; } = 0.8;
+    public int PollingRateMs { get; set; } = 500; // Default 500ms
     public int? JoystickDeviceIndex { get; set; } = null;
     public int? JoystickButton { get; set; } = null;
 
     // Display visibility settings
     public bool ShowSimRate { get; set; } = true;
     public bool ShowGroundSpeed { get; set; } = true;
+    public bool ShowAGL { get; set; } = true;
     public bool ShowWind { get; set; } = true;
+    public bool ShowGlideSlope { get; set; } = true;
 
     private static string GetSettingsPath()
     {
