@@ -1,5 +1,5 @@
 ﻿/* SimRateSharp is a simple overlay application for MSFS to display
- * simulation rate, ground speed, and reset sim-rate via joystick button.
+ * simulation rate and reset sim-rate via joystick button as well as displaying other vital data.
  *
  * Copyright (C) 2025 Grant DeFayette / CavebatSoftware LLC 
  *
@@ -55,70 +55,57 @@ public partial class MainWindow : Window
         // Apply opacity
         MainBorder.Opacity = _settings.Opacity;
 
-        // Apply size
-        ApplySize(_settings.Size);
+        // Apply display visibility
+        ApplyDisplayVisibility();
     }
 
-    private void ApplySize(string size)
+    private void ApplyDisplayVisibility()
     {
-        switch (size)
+        SimRatePanel.Visibility = _settings.ShowSimRate ? Visibility.Visible : Visibility.Collapsed;
+        GroundSpeedPanel.Visibility = _settings.ShowGroundSpeed ? Visibility.Visible : Visibility.Collapsed;
+        WindPanel.Visibility = _settings.ShowWind ? Visibility.Visible : Visibility.Collapsed;
+
+        // Hide separators intelligently - only show between visible panels
+        // Separator1: between SimRate and GroundSpeed
+        Separator1.Visibility = (_settings.ShowSimRate && _settings.ShowGroundSpeed) ? Visibility.Visible : Visibility.Collapsed;
+
+        // Separator2: between GroundSpeed and Wind
+        Separator2.Visibility = (_settings.ShowGroundSpeed && _settings.ShowWind) ? Visibility.Visible : Visibility.Collapsed;
+
+        // Separator3: before button (only if Wind is visible)
+        Separator3.Visibility = _settings.ShowWind ? Visibility.Visible : Visibility.Collapsed;
+
+        // Special case: if SimRate is hidden but GroundSpeed is shown, show Separator2 if Wind is also shown
+        if (!_settings.ShowGroundSpeed && _settings.ShowSimRate && _settings.ShowWind)
         {
-            case "Small":
-                Width = 350;
-                Height = 60;
-                UpdateFontSizes(16);
-                break;
-            case "Large":
-                Width = 600;
-                Height = 100;
-                UpdateFontSizes(32);
-                break;
-            default: // Medium
-                Width = 500;
-                Height = 80;
-                UpdateFontSizes(24);
-                break;
+            Separator2.Visibility = Visibility.Visible;
         }
-    }
 
-    private void UpdateFontSizes(double mainFontSize)
-    {
-        SimRateTextBlock.FontSize = mainFontSize;
-        GroundSpeedTextBlock.FontSize = mainFontSize;
-
-        double labelFontSize = mainFontSize / 2.4;
-        foreach (var child in FindVisualChildren<TextBlock>(this))
-        {
-            if (child.Text.Contains("SIM RATE") || child.Text.Contains("GROUND SPEED"))
-            {
-                child.FontSize = labelFontSize;
-            }
-        }
-    }
-
-    private IEnumerable<T> FindVisualChildren<T>(DependencyObject? depObj) where T : DependencyObject
-    {
-        if (depObj != null)
-        {
-            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(depObj); i++)
-            {
-                DependencyObject? child = System.Windows.Media.VisualTreeHelper.GetChild(depObj, i);
-                if (child != null && child is T)
-                {
-                    yield return (T)child;
-                }
-
-                foreach (T childOfChild in FindVisualChildren<T>(child))
-                {
-                    yield return childOfChild;
-                }
-            }
-        }
+        // WPF SizeToContent automatically adjusts window size - no manual width calculation needed
     }
 
     private void CreateContextMenu()
     {
         var contextMenu = new ContextMenu();
+
+        // Display visibility submenu
+        var displayMenuItem = new MenuItem { Header = "Display" };
+
+        var simRateItem = new MenuItem { Header = "Sim Rate", IsCheckable = true, IsChecked = _settings.ShowSimRate };
+        simRateItem.Click += (s, e) => ToggleDisplay("SimRate", simRateItem.IsChecked);
+        displayMenuItem.Items.Add(simRateItem);
+
+        var groundSpeedItem = new MenuItem { Header = "Ground Speed", IsCheckable = true, IsChecked = _settings.ShowGroundSpeed };
+        groundSpeedItem.Click += (s, e) => ToggleDisplay("GroundSpeed", groundSpeedItem.IsChecked);
+        displayMenuItem.Items.Add(groundSpeedItem);
+
+        var windItem = new MenuItem { Header = "Wind", IsCheckable = true, IsChecked = _settings.ShowWind };
+        windItem.Click += (s, e) => ToggleDisplay("Wind", windItem.IsChecked);
+        displayMenuItem.Items.Add(windItem);
+
+        contextMenu.Items.Add(displayMenuItem);
+
+        contextMenu.Items.Add(new Separator());
 
         // Opacity submenu
         var opacityMenuItem = new MenuItem { Header = "Opacity" };
@@ -129,16 +116,6 @@ public partial class MainWindow : Window
             opacityMenuItem.Items.Add(item);
         }
         contextMenu.Items.Add(opacityMenuItem);
-
-        // Size submenu
-        var sizeMenuItem = new MenuItem { Header = "Size" };
-        foreach (var size in new[] { "Small", "Medium", "Large" })
-        {
-            var item = new MenuItem { Header = size };
-            item.Click += (s, e) => SetSize(size);
-            sizeMenuItem.Items.Add(item);
-        }
-        contextMenu.Items.Add(sizeMenuItem);
 
         contextMenu.Items.Add(new Separator());
 
@@ -362,10 +339,21 @@ public partial class MainWindow : Window
         _settings.Save();
     }
 
-    private void SetSize(string size)
+    private void ToggleDisplay(string displayName, bool isVisible)
     {
-        ApplySize(size);
-        _settings.Size = size;
+        switch (displayName)
+        {
+            case "SimRate":
+                _settings.ShowSimRate = isVisible;
+                break;
+            case "GroundSpeed":
+                _settings.ShowGroundSpeed = isVisible;
+                break;
+            case "Wind":
+                _settings.ShowWind = isVisible;
+                break;
+        }
+        ApplyDisplayVisibility();
         _settings.Save();
     }
 
@@ -440,6 +428,27 @@ public partial class MainWindow : Window
         {
             SimRateTextBlock.Text = $"{data.SimulationRate:F2}x";
             GroundSpeedTextBlock.Text = $"{data.GroundSpeed:F0} kts";
+
+            // Calculate relative wind direction
+            // Wind direction is where wind is coming FROM
+            // Relative angle: positive = wind from right, negative = wind from left
+            // 0° = headwind, 180° = tailwind
+            double relativeWindAngle = data.WindDirection - data.PlaneHeading;
+
+            // Normalize to -180 to +180 range
+            while (relativeWindAngle > 180) relativeWindAngle -= 360;
+            while (relativeWindAngle < -180) relativeWindAngle += 360;
+
+            // Update wind display with zero-padding
+            int windSpeed = (int)Math.Round(data.WindSpeed);
+            int windAngle = (int)Math.Round(Math.Abs(relativeWindAngle));
+
+            WindSpeedTextBlock.Text = $"{windSpeed:D2} kts";
+            WindAngleTextBlock.Text = $"{windAngle:D3}°";
+
+            // Rotate arrow to show wind direction relative to aircraft
+            // Arrow points in direction wind is coming FROM
+            WindArrowRotation.Angle = relativeWindAngle;
         });
     }
 
@@ -451,6 +460,8 @@ public partial class MainWindow : Window
             {
                 SimRateTextBlock.Text = "--";
                 GroundSpeedTextBlock.Text = "-- kts";
+                WindSpeedTextBlock.Text = "-- kts";
+                WindAngleTextBlock.Text = "--°";
             }
         });
     }

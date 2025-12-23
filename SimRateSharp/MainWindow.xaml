@@ -1,6 +1,6 @@
 ﻿<!--
     * SimRateSharp is a simple overlay application for MSFS to display
-    * simulation rate, ground speed, and reset sim-rate via joystick button.
+    * simulation rate and reset sim-rate via joystick button as well as displaying other vital data.
     *
     * Copyright (C) 2025 Grant DeFayette / CavebatSoftware LLC 
     *
@@ -24,8 +24,7 @@
         xmlns:local="clr-namespace:SimRateSharp"
         mc:Ignorable="d"
         Title="MSFS Sim Rate Monitor"
-        Height="80"
-        Width="500"
+        SizeToContent="WidthAndHeight"
         WindowStartupLocation="Manual"
         ResizeMode="NoResize"
         Background="Transparent"
@@ -83,16 +82,18 @@
 
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="20"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <!-- Capture Mode Overlay -->
             <Border x:Name="CaptureOverlay"
-                    Grid.ColumnSpan="5"
+                    Grid.ColumnSpan="7"
                     Background="#E0000000"
                     CornerRadius="6"
                     Visibility="Collapsed"
@@ -115,7 +116,7 @@
             </Border>
 
             <!-- Sim Rate Display -->
-            <StackPanel Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel x:Name="SimRatePanel" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="⚡ SIM RATE"
                            FontSize="10"
                            Foreground="#80FFFFFF"
@@ -137,8 +138,11 @@
                 </TextBlock>
             </StackPanel>
 
+            <!-- Separator 1 -->
+            <Border x:Name="Separator1" Grid.Column="1" Width="20"/>
+
             <!-- Ground Speed Display -->
-            <StackPanel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel x:Name="GroundSpeedPanel" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="🛫 GROUND SPEED"
                            FontSize="10"
                            Foreground="#80FFFFFF"
@@ -160,9 +164,94 @@
                 </TextBlock>
             </StackPanel>
 
+            <!-- Separator 2 -->
+            <Border x:Name="Separator2" Grid.Column="3" Width="20"/>
+
+            <!-- Wind Display -->
+            <StackPanel x:Name="WindPanel" Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="💨 WIND"
+                           FontSize="10"
+                           Foreground="#80FFFFFF"
+                           HorizontalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,2"/>
+                <Grid HorizontalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Wind Speed -->
+                    <TextBlock x:Name="WindSpeedTextBlock"
+                               Grid.Column="0"
+                               Text="-- kts"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Foreground="#FFB300"
+                               VerticalAlignment="Center">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="#FFB300"
+                                            Opacity="0.4"
+                                            BlurRadius="8"
+                                            ShadowDepth="0"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+
+                    <!-- Wind Arrow (relative to aircraft heading) -->
+                    <Canvas x:Name="WindArrowCanvas"
+                            Grid.Column="2"
+                            Width="32"
+                            Height="32"
+                            VerticalAlignment="Center">
+                        <Canvas.RenderTransform>
+                            <RotateTransform x:Name="WindArrowRotation" Angle="0" CenterX="16" CenterY="16"/>
+                        </Canvas.RenderTransform>
+                        <!-- Circle background -->
+                        <Ellipse Width="32" Height="32"
+                                 Stroke="#60FFB300"
+                                 StrokeThickness="2"
+                                 Fill="#20FFB300"/>
+                        <!-- Arrow pointing up (0° = wind from ahead) -->
+                        <Path Data="M 16,8 L 20,16 L 18,16 L 18,24 L 14,24 L 14,16 L 12,16 Z"
+                              Fill="#FFB300"
+                              Stroke="#FFFFFF"
+                              StrokeThickness="0.5">
+                            <Path.Effect>
+                                <DropShadowEffect Color="#FFB300"
+                                                Opacity="0.6"
+                                                BlurRadius="4"
+                                                ShadowDepth="0"/>
+                            </Path.Effect>
+                        </Path>
+                    </Canvas>
+
+                    <!-- Relative Wind Angle -->
+                    <TextBlock x:Name="WindAngleTextBlock"
+                               Grid.Column="4"
+                               Text="--°"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Foreground="#FFB300"
+                               VerticalAlignment="Center">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="#FFB300"
+                                            Opacity="0.4"
+                                            BlurRadius="8"
+                                            ShadowDepth="0"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+                </Grid>
+            </StackPanel>
+
+            <!-- Separator 3 -->
+            <Border x:Name="Separator3" Grid.Column="5" Width="20"/>
+
             <!-- 1x Reset Button -->
             <Button x:Name="ResetButton"
-                    Grid.Column="4"
+                    Grid.Column="6"
                     Content="1x"
                     Style="{StaticResource ModernButton}"
                     Click="ResetButton_Click"
