@@ -25,11 +25,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <PlatformTarget>x64</PlatformTarget>
-    <Version>1.0.0</Version>
+    <Version>2.0.0</Version>
     <Authors>SimRate Sharp Contributors</Authors>
     <Product>SimRate Sharp</Product>
-    <Description>MSFS 2024 Sim Rate Monitor and Control</Description>
-    <Copyright>Copyright © 2025</Copyright>
+    <Description>Sim Rate Monitor and Control</Description>
+    <Copyright>Copyright © 2025 Grant DeFayette / CavebatSoftware LLC</Copyright>
     <ApplicationIcon>..\app.ico</ApplicationIcon>
   </PropertyGroup>
 

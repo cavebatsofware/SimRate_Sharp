@@ -33,6 +33,12 @@ public class SimConnectManager
     private bool _isConnected;
     private double _currentSimRate = 1.0;
 
+    // Track which data types to poll (optimization)
+    private bool _pollGroundSpeed = true;
+    private bool _pollWind = true;
+    private bool _pollAGL = true;
+    private bool _pollGlideSlope = true;
+
     public event EventHandler<SimData>? DataUpdated;
     public event EventHandler<bool>? ConnectionStatusChanged;
 
@@ -109,15 +115,38 @@ public class SimConnectManager
         _pollTimer.Interval = TimeSpan.FromMilliseconds(milliseconds);
     }
 
-    private void TryConnect()
+    public void UpdateDataDefinition(bool pollGroundSpeed, bool pollWind, bool pollAGL, bool pollGlideSlope)
     {
-        if (_isConnected) return;
+        if (_simConnect == null || !_isConnected)
+        {
+            // Store for when we connect
+            _pollGroundSpeed = pollGroundSpeed;
+            _pollWind = pollWind;
+            _pollAGL = pollAGL;
+            _pollGlideSlope = pollGlideSlope;
+            return;
+        }
+
+        // Only rebuild if something changed
+        if (_pollGroundSpeed == pollGroundSpeed && _pollWind == pollWind &&
+            _pollAGL == pollAGL && _pollGlideSlope == pollGlideSlope)
+        {
+            return;
+        }
+
+        Logger.WriteLine($"[SimConnectManager] Updating data definition: GS={pollGroundSpeed}, Wind={pollWind}, AGL={pollAGL}, Glide={pollGlideSlope}");
+
+        _pollGroundSpeed = pollGroundSpeed;
+        _pollWind = pollWind;
+        _pollAGL = pollAGL;
+        _pollGlideSlope = pollGlideSlope;
 
         try
         {
-            _simConnect = new SimConnect("SimRate Sharp", _handle, 0x0402, null, 0);
+            // Clear old definition
+            _simConnect.ClearDataDefinition(DEFINITIONS.SimDataDefinition);
 
-            // Define the data structure
+            // Always poll sim rate (needed for reset button functionality)
             _simConnect.AddToDataDefinition(
                 DEFINITIONS.SimDataDefinition,
                 "SIMULATION RATE",
@@ -127,61 +156,94 @@ public class SimConnectManager
                 SimConnect.SIMCONNECT_UNUSED
             );
 
-            _simConnect.AddToDataDefinition(
-                DEFINITIONS.SimDataDefinition,
-                "GROUND VELOCITY",
-                "Knots",
-                SIMCONNECT_DATATYPE.FLOAT64,
-                0.0f,
-                SimConnect.SIMCONNECT_UNUSED
-            );
+            // Conditionally add ground speed (needed by GroundSpeed panel AND GlideSlope panel)
+            if (_pollGroundSpeed || _pollGlideSlope)
+            {
+                _simConnect.AddToDataDefinition(
+                    DEFINITIONS.SimDataDefinition,
+                    "GROUND VELOCITY",
+                    "Knots",
+                    SIMCONNECT_DATATYPE.FLOAT64,
+                    0.0f,
+                    SimConnect.SIMCONNECT_UNUSED
+                );
+            }
 
-            _simConnect.AddToDataDefinition(
-                DEFINITIONS.SimDataDefinition,
-                "AMBIENT WIND VELOCITY",
-                "Knots",
-                SIMCONNECT_DATATYPE.FLOAT64,
-                0.0f,
-                SimConnect.SIMCONNECT_UNUSED
-            );
+            // Wind data (3 SimVars)
+            if (_pollWind)
+            {
+                _simConnect.AddToDataDefinition(
+                    DEFINITIONS.SimDataDefinition,
+                    "AMBIENT WIND VELOCITY",
+                    "Knots",
+                    SIMCONNECT_DATATYPE.FLOAT64,
+                    0.0f,
+                    SimConnect.SIMCONNECT_UNUSED
+                );
 
-            _simConnect.AddToDataDefinition(
-                DEFINITIONS.SimDataDefinition,
-                "AMBIENT WIND DIRECTION",
-                "Degrees",
-                SIMCONNECT_DATATYPE.FLOAT64,
-                0.0f,
-                SimConnect.SIMCONNECT_UNUSED
-            );
+                _simConnect.AddToDataDefinition(
+                    DEFINITIONS.SimDataDefinition,
+                    "AMBIENT WIND DIRECTION",
+                    "Degrees",
+                    SIMCONNECT_DATATYPE.FLOAT64,
+                    0.0f,
+                    SimConnect.SIMCONNECT_UNUSED
+                );
 
-            _simConnect.AddToDataDefinition(
-                DEFINITIONS.SimDataDefinition,
-                "PLANE HEADING DEGREES TRUE",
-                "Degrees",
-                SIMCONNECT_DATATYPE.FLOAT64,
-                0.0f,
-                SimConnect.SIMCONNECT_UNUSED
-            );
+                _simConnect.AddToDataDefinition(
+                    DEFINITIONS.SimDataDefinition,
+                    "PLANE HEADING DEGREES TRUE",
+                    "Degrees",
+                    SIMCONNECT_DATATYPE.FLOAT64,
+                    0.0f,
+                    SimConnect.SIMCONNECT_UNUSED
+                );
+            }
 
-            _simConnect.AddToDataDefinition(
-                DEFINITIONS.SimDataDefinition,
-                "PLANE ALT ABOVE GROUND",
-                "Feet",
-                SIMCONNECT_DATATYPE.FLOAT64,
-                0.0f,
-                SimConnect.SIMCONNECT_UNUSED
-            );
+            // AGL
+            if (_pollAGL)
+            {
+                _simConnect.AddToDataDefinition(
+                    DEFINITIONS.SimDataDefinition,
+                    "PLANE ALT ABOVE GROUND",
+                    "Feet",
+                    SIMCONNECT_DATATYPE.FLOAT64,
+                    0.0f,
+                    SimConnect.SIMCONNECT_UNUSED
+                );
+            }
 
-            _simConnect.AddToDataDefinition(
-                DEFINITIONS.SimDataDefinition,
-                "VERTICAL SPEED",
-                "Feet per minute",
-                SIMCONNECT_DATATYPE.FLOAT64,
-                0.0f,
-                SimConnect.SIMCONNECT_UNUSED
-            );
+            // Vertical speed (for glide slope)
+            if (_pollGlideSlope)
+            {
+                _simConnect.AddToDataDefinition(
+                    DEFINITIONS.SimDataDefinition,
+                    "VERTICAL SPEED",
+                    "Feet per minute",
+                    SIMCONNECT_DATATYPE.FLOAT64,
+                    0.0f,
+                    SimConnect.SIMCONNECT_UNUSED
+                );
+            }
 
+            // Re-register struct with new definition
             _simConnect.RegisterDataDefineStruct<SimDataStruct>(DEFINITIONS.SimDataDefinition);
+
+            Logger.WriteLine("[SimConnectManager] Data definition updated successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.WriteLine($"[SimConnectManager] Failed to update data definition: {ex.Message}");
+        }
+    }
+
+    private void TryConnect()
+    {
+        if (_isConnected) return;
+
+        try
+        {
+            _simConnect = new SimConnect("SimRate Sharp", _handle, 0x0402, null, 0);
 
             // Map sim rate events
             _simConnect.MapClientEventToSimEvent(EVENTS.SimRateIncrease, "SIM_RATE_INCR");
@@ -195,6 +257,20 @@ public class SimConnectManager
             _isConnected = true;
             _reconnectTimer.Stop();
             _pollTimer.Start();
+
+            // Build initial data definition based on current poll settings
+            // Force rebuild by temporarily clearing the flags
+            var tempGS = _pollGroundSpeed;
+            var tempWind = _pollWind;
+            var tempAGL = _pollAGL;
+            var tempGlide = _pollGlideSlope;
+
+            _pollGroundSpeed = !tempGS;
+            _pollWind = !tempWind;
+            _pollAGL = !tempAGL;
+            _pollGlideSlope = !tempGlide;
+
+            UpdateDataDefinition(tempGS, tempWind, tempAGL, tempGlide);
 
             ConnectionStatusChanged?.Invoke(this, true);
         }

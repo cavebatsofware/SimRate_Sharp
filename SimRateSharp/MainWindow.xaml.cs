@@ -67,6 +67,16 @@ public partial class MainWindow : Window
 
         // Apply display visibility
         ApplyDisplayVisibility();
+
+        // Configure SimConnect polling for visible panels
+        // Note: SimConnect might not be initialized yet at startup, but that's OK
+        // UpdateDataDefinition stores the settings and will apply them when connection is established
+        _simConnectManager?.UpdateDataDefinition(
+            pollGroundSpeed: _settings.ShowGroundSpeed,
+            pollWind: _settings.ShowWind,
+            pollAGL: _settings.ShowAGL,
+            pollGlideSlope: _settings.ShowGlideSlope
+        );
     }
 
     private void ApplyDisplayVisibility()
@@ -447,6 +457,14 @@ public partial class MainWindow : Window
         {
             Logger.WriteLine("[MainWindow] Warning: Failed to save display visibility setting");
         }
+
+        // Update SimConnect polling to only request data for visible panels
+        _simConnectManager?.UpdateDataDefinition(
+            pollGroundSpeed: _settings.ShowGroundSpeed,
+            pollWind: _settings.ShowWind,
+            pollAGL: _settings.ShowAGL,
+            pollGlideSlope: _settings.ShowGlideSlope
+        );
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
