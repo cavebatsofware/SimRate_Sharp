@@ -1,5 +1,5 @@
 /* SimRateSharp is a simple overlay application for MSFS to display
- * simulation rate, ground speed, and reset sim-rate via joystick button.
+ * simulation rate and reset sim-rate via joystick button as well as displaying other vital data.
  *
  * Copyright (C) 2025 Grant DeFayette / CavebatSoftware LLC 
  *
@@ -62,15 +62,25 @@ public class SimConnectManager
     {
         public double SimulationRate;
         public double GroundSpeed;
+        public double WindSpeed;
+        public double WindDirection;
+        public double PlaneHeading;
+        public double AltitudeAboveGround;
+        public double VerticalSpeed;
     }
 
     public class SimData
     {
         public double SimulationRate { get; set; }
         public double GroundSpeed { get; set; }
+        public double WindSpeed { get; set; }
+        public double WindDirection { get; set; }
+        public double PlaneHeading { get; set; }
+        public double AltitudeAboveGround { get; set; }
+        public double VerticalSpeed { get; set; }
     }
 
-    public SimConnectManager(IntPtr handle)
+    public SimConnectManager(IntPtr handle, int pollingRateMs = 500)
     {
         _handle = handle;
         _isConnected = false;
@@ -82,16 +92,21 @@ public class SimConnectManager
         };
         _reconnectTimer.Tick += ReconnectTimer_Tick;
 
-        // Poll timer - request data every 500ms
+        // Poll timer - request data at specified rate
         _pollTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(500)
+            Interval = TimeSpan.FromMilliseconds(pollingRateMs)
         };
         _pollTimer.Tick += PollTimer_Tick;
 
         // Start trying to connect
         _reconnectTimer.Start();
         TryConnect();
+    }
+
+    public void SetPollingRate(int milliseconds)
+    {
+        _pollTimer.Interval = TimeSpan.FromMilliseconds(milliseconds);
     }
 
     private void TryConnect()
@@ -116,6 +131,51 @@ public class SimConnectManager
                 DEFINITIONS.SimDataDefinition,
                 "GROUND VELOCITY",
                 "Knots",
+                SIMCONNECT_DATATYPE.FLOAT64,
+                0.0f,
+                SimConnect.SIMCONNECT_UNUSED
+            );
+
+            _simConnect.AddToDataDefinition(
+                DEFINITIONS.SimDataDefinition,
+                "AMBIENT WIND VELOCITY",
+                "Knots",
+                SIMCONNECT_DATATYPE.FLOAT64,
+                0.0f,
+                SimConnect.SIMCONNECT_UNUSED
+            );
+
+            _simConnect.AddToDataDefinition(
+                DEFINITIONS.SimDataDefinition,
+                "AMBIENT WIND DIRECTION",
+                "Degrees",
+                SIMCONNECT_DATATYPE.FLOAT64,
+                0.0f,
+                SimConnect.SIMCONNECT_UNUSED
+            );
+
+            _simConnect.AddToDataDefinition(
+                DEFINITIONS.SimDataDefinition,
+                "PLANE HEADING DEGREES TRUE",
+                "Degrees",
+                SIMCONNECT_DATATYPE.FLOAT64,
+                0.0f,
+                SimConnect.SIMCONNECT_UNUSED
+            );
+
+            _simConnect.AddToDataDefinition(
+                DEFINITIONS.SimDataDefinition,
+                "PLANE ALT ABOVE GROUND",
+                "Feet",
+                SIMCONNECT_DATATYPE.FLOAT64,
+                0.0f,
+                SimConnect.SIMCONNECT_UNUSED
+            );
+
+            _simConnect.AddToDataDefinition(
+                DEFINITIONS.SimDataDefinition,
+                "VERTICAL SPEED",
+                "Feet per minute",
                 SIMCONNECT_DATATYPE.FLOAT64,
                 0.0f,
                 SimConnect.SIMCONNECT_UNUSED
@@ -181,7 +241,12 @@ public class SimConnectManager
             DataUpdated?.Invoke(this, new SimData
             {
                 SimulationRate = simData.SimulationRate,
-                GroundSpeed = simData.GroundSpeed
+                GroundSpeed = simData.GroundSpeed,
+                WindSpeed = simData.WindSpeed,
+                WindDirection = simData.WindDirection,
+                PlaneHeading = simData.PlaneHeading,
+                AltitudeAboveGround = simData.AltitudeAboveGround,
+                VerticalSpeed = simData.VerticalSpeed
             });
         }
     }
@@ -210,7 +275,10 @@ public class SimConnectManager
             {
                 _simConnect.Dispose();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.WriteLine($"[SimConnectManager] Error disposing SimConnect during disconnect: {ex.Message}");
+            }
             _simConnect = null;
         }
 
@@ -240,10 +308,14 @@ public class SimConnectManager
 
             // Send the appropriate number of increase/decrease events
             // We'll use a different approach: just send events until we're close
+            // Safety limit: max 10 iterations (0.25 to 128 is only 9 doublings)
+            const int MAX_ITERATIONS = 10;
+            int iterations = 0;
+
             if (targetRate < _currentSimRate)
             {
                 // Decreasing - send decrease events
-                while (_currentSimRate > targetRate + 0.01)
+                while (_currentSimRate > targetRate + 0.01 && iterations < MAX_ITERATIONS)
                 {
                     _simConnect.TransmitClientEvent(
                         SimConnect.SIMCONNECT_OBJECT_ID_USER,
@@ -254,12 +326,17 @@ public class SimConnectManager
                     );
                     // Estimate new rate (each decrease roughly halves it)
                     _currentSimRate = Math.Max(0.25, _currentSimRate / 2);
+                    iterations++;
+                }
+                if (iterations >= MAX_ITERATIONS)
+                {
+                    Logger.WriteLine($"[SimConnectManager] Warning: Hit iteration limit while decreasing sim rate from {_currentSimRate} to {targetRate}");
                 }
             }
             else
             {
                 // Increasing - send increase events
-                while (_currentSimRate < targetRate - 0.01)
+                while (_currentSimRate < targetRate - 0.01 && iterations < MAX_ITERATIONS)
                 {
                     _simConnect.TransmitClientEvent(
                         SimConnect.SIMCONNECT_OBJECT_ID_USER,
@@ -270,6 +347,11 @@ public class SimConnectManager
                     );
                     // Estimate new rate (each increase roughly doubles it)
                     _currentSimRate = Math.Min(128, _currentSimRate * 2);
+                    iterations++;
+                }
+                if (iterations >= MAX_ITERATIONS)
+                {
+                    Logger.WriteLine($"[SimConnectManager] Warning: Hit iteration limit while increasing sim rate from {_currentSimRate} to {targetRate}");
                 }
             }
         }
@@ -291,7 +373,10 @@ public class SimConnectManager
             {
                 _simConnect.Dispose();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.WriteLine($"[SimConnectManager] Error disposing SimConnect during shutdown: {ex.Message}");
+            }
             _simConnect = null;
         }
     }

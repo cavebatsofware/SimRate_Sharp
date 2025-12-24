@@ -1,5 +1,5 @@
 /* SimRateSharp is a simple overlay application for MSFS to display
- * simulation rate, ground speed, and reset sim-rate via joystick button.
+ * simulation rate and reset sim-rate via joystick button as well as displaying other vital data.
  *
  * Copyright (C) 2025 Grant DeFayette / CavebatSoftware LLC 
  *
@@ -42,7 +42,7 @@ public class JoystickManager : IDisposable
     {
         _pollTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(50) // Poll 20 times per second
+            Interval = TimeSpan.FromMilliseconds(250) // Poll 4 times per second (reduced from 50ms to avoid USB contention)
         };
         _pollTimer.Tick += PollTimer_Tick;
 

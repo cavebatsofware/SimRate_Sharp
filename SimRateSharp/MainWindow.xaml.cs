@@ -1,5 +1,5 @@
 ﻿/* SimRateSharp is a simple overlay application for MSFS to display
- * simulation rate, ground speed, and reset sim-rate via joystick button.
+ * simulation rate and reset sim-rate via joystick button as well as displaying other vital data.
  *
  * Copyright (C) 2025 Grant DeFayette / CavebatSoftware LLC 
  *
@@ -21,6 +21,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Threading;
 
 namespace SimRateSharp;
 
@@ -33,6 +34,15 @@ public partial class MainWindow : Window
     private JoystickManager? _joystickManager;
     private Settings _settings;
     private const int WM_USER_SIMCONNECT = 0x0402;
+
+    // Cache previous values to avoid unnecessary UI updates
+    private double _lastSimRate = -1;
+    private double _lastGroundSpeed = -1;
+    private double _lastAGL = -1;
+    private double _lastGlideSlope = -999;
+    private int _lastWindSpeed = -1;
+    private int _lastWindAngle = -1;
+    private double _lastWindArrowAngle = -999;
 
     public MainWindow()
     {
@@ -55,70 +65,93 @@ public partial class MainWindow : Window
         // Apply opacity
         MainBorder.Opacity = _settings.Opacity;
 
-        // Apply size
-        ApplySize(_settings.Size);
+        // Apply display visibility
+        ApplyDisplayVisibility();
     }
 
-    private void ApplySize(string size)
+    private void ApplyDisplayVisibility()
     {
-        switch (size)
-        {
-            case "Small":
-                Width = 350;
-                Height = 60;
-                UpdateFontSizes(16);
-                break;
-            case "Large":
-                Width = 600;
-                Height = 100;
-                UpdateFontSizes(32);
-                break;
-            default: // Medium
-                Width = 500;
-                Height = 80;
-                UpdateFontSizes(24);
-                break;
-        }
-    }
+        SimRatePanel.Visibility = _settings.ShowSimRate ? Visibility.Visible : Visibility.Collapsed;
+        GroundSpeedPanel.Visibility = _settings.ShowGroundSpeed ? Visibility.Visible : Visibility.Collapsed;
+        AGLPanel.Visibility = _settings.ShowAGL ? Visibility.Visible : Visibility.Collapsed;
+        GlideSlopePanel.Visibility = _settings.ShowGlideSlope ? Visibility.Visible : Visibility.Collapsed;
+        WindPanel.Visibility = _settings.ShowWind ? Visibility.Visible : Visibility.Collapsed;
 
-    private void UpdateFontSizes(double mainFontSize)
-    {
-        SimRateTextBlock.FontSize = mainFontSize;
-        GroundSpeedTextBlock.FontSize = mainFontSize;
+        // Collect visible panels in order
+        var visiblePanels = new List<string>();
+        if (_settings.ShowSimRate) visiblePanels.Add("SimRate");
+        if (_settings.ShowGroundSpeed) visiblePanels.Add("GroundSpeed");
+        if (_settings.ShowAGL) visiblePanels.Add("AGL");
+        if (_settings.ShowGlideSlope) visiblePanels.Add("GlideSlope");
+        if (_settings.ShowWind) visiblePanels.Add("Wind");
 
-        double labelFontSize = mainFontSize / 2.4;
-        foreach (var child in FindVisualChildren<TextBlock>(this))
+        // Hide all separators initially
+        Separator1.Visibility = Visibility.Collapsed;
+        Separator2.Visibility = Visibility.Collapsed;
+        Separator3.Visibility = Visibility.Collapsed;
+        Separator4.Visibility = Visibility.Collapsed;
+        Separator5.Visibility = Visibility.Collapsed;
+
+        // Show separators between consecutive visible panels
+        if (visiblePanels.Count >= 2)
         {
-            if (child.Text.Contains("SIM RATE") || child.Text.Contains("GROUND SPEED"))
+            for (int i = 0; i < visiblePanels.Count - 1; i++)
             {
-                child.FontSize = labelFontSize;
+                // Show separator between panel[i] and panel[i+1]
+                if (i == 0 && visiblePanels.Count > 1)
+                    Separator1.Visibility = Visibility.Visible;
+                if (i == 1 && visiblePanels.Count > 2)
+                    Separator2.Visibility = Visibility.Visible;
+                if (i == 2 && visiblePanels.Count > 3)
+                    Separator3.Visibility = Visibility.Visible;
+                if (i == 3 && visiblePanels.Count > 4)
+                    Separator4.Visibility = Visibility.Visible;
             }
         }
-    }
 
-    private IEnumerable<T> FindVisualChildren<T>(DependencyObject? depObj) where T : DependencyObject
-    {
-        if (depObj != null)
-        {
-            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(depObj); i++)
-            {
-                DependencyObject? child = System.Windows.Media.VisualTreeHelper.GetChild(depObj, i);
-                if (child != null && child is T)
-                {
-                    yield return (T)child;
-                }
+        // Separator5: before button (only if at least one panel is visible)
+        if (visiblePanels.Count > 0)
+            Separator5.Visibility = Visibility.Visible;
 
-                foreach (T childOfChild in FindVisualChildren<T>(child))
-                {
-                    yield return childOfChild;
-                }
-            }
-        }
+        // WPF SizeToContent automatically adjusts window size
     }
 
     private void CreateContextMenu()
     {
+        // Dispose old context menu to prevent lambda handler accumulation
+        if (MainBorder.ContextMenu != null)
+        {
+            MainBorder.ContextMenu = null;
+        }
+
         var contextMenu = new ContextMenu();
+
+        // Display visibility submenu
+        var displayMenuItem = new MenuItem { Header = "Display" };
+
+        var simRateItem = new MenuItem { Header = "Sim Rate", IsCheckable = true, IsChecked = _settings.ShowSimRate };
+        simRateItem.Click += (s, e) => ToggleDisplay("SimRate", simRateItem.IsChecked);
+        displayMenuItem.Items.Add(simRateItem);
+
+        var groundSpeedItem = new MenuItem { Header = "Ground Speed", IsCheckable = true, IsChecked = _settings.ShowGroundSpeed };
+        groundSpeedItem.Click += (s, e) => ToggleDisplay("GroundSpeed", groundSpeedItem.IsChecked);
+        displayMenuItem.Items.Add(groundSpeedItem);
+
+        var aglItem = new MenuItem { Header = "AGL", IsCheckable = true, IsChecked = _settings.ShowAGL };
+        aglItem.Click += (s, e) => ToggleDisplay("AGL", aglItem.IsChecked);
+        displayMenuItem.Items.Add(aglItem);
+
+        var glideSlopeItem = new MenuItem { Header = "Glide Slope", IsCheckable = true, IsChecked = _settings.ShowGlideSlope };
+        glideSlopeItem.Click += (s, e) => ToggleDisplay("GlideSlope", glideSlopeItem.IsChecked);
+        displayMenuItem.Items.Add(glideSlopeItem);
+
+        var windItem = new MenuItem { Header = "Wind", IsCheckable = true, IsChecked = _settings.ShowWind };
+        windItem.Click += (s, e) => ToggleDisplay("Wind", windItem.IsChecked);
+        displayMenuItem.Items.Add(windItem);
+
+        contextMenu.Items.Add(displayMenuItem);
+
+        contextMenu.Items.Add(new Separator());
 
         // Opacity submenu
         var opacityMenuItem = new MenuItem { Header = "Opacity" };
@@ -130,15 +163,26 @@ public partial class MainWindow : Window
         }
         contextMenu.Items.Add(opacityMenuItem);
 
-        // Size submenu
-        var sizeMenuItem = new MenuItem { Header = "Size" };
-        foreach (var size in new[] { "Small", "Medium", "Large" })
+        // Polling rate submenu
+        var pollingMenuItem = new MenuItem { Header = "Polling Rate" };
+        var pollingRates = new[]
         {
-            var item = new MenuItem { Header = size };
-            item.Click += (s, e) => SetSize(size);
-            sizeMenuItem.Items.Add(item);
+            (250, "250ms (may impact performance)"),
+            (500, "500ms (fast)"),
+            (750, "750ms"),
+            (1000, "1000ms"),
+            (2000, "2000ms (slow)")
+        };
+
+        foreach (var (ms, label) in pollingRates)
+        {
+            var item = new MenuItem { Header = label };
+            if (_settings.PollingRateMs == ms)
+                item.IsChecked = true;
+            item.Click += (s, e) => SetPollingRate(ms);
+            pollingMenuItem.Items.Add(item);
         }
-        contextMenu.Items.Add(sizeMenuItem);
+        contextMenu.Items.Add(pollingMenuItem);
 
         contextMenu.Items.Add(new Separator());
 
@@ -203,7 +247,10 @@ public partial class MainWindow : Window
             _joystickManager?.ClearTriggerButton();
         }
 
-        _settings.Save();
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save joystick device selection");
+        }
 
         _joystickManager?.SelectDevice(deviceIndex);
 
@@ -252,7 +299,10 @@ public partial class MainWindow : Window
             clearItem.Click += (s, args) =>
             {
                 _settings.JoystickButton = null;
-                _settings.Save();
+                if (!_settings.Save())
+                {
+                    Logger.WriteLine("[MainWindow] Warning: Failed to save cleared button setting");
+                }
                 _joystickManager?.ClearTriggerButton();
                 // Recreate menu to update button display
                 CreateContextMenu();
@@ -285,7 +335,7 @@ public partial class MainWindow : Window
 
         // Subscribe to capture event (one-time)
         EventHandler<int>? captureHandler = null;
-        System.Timers.Timer? timeoutTimer = null;
+        DispatcherTimer? timeoutTimer = null;
 
         captureHandler = (sender, buttonIndex) =>
         {
@@ -293,35 +343,31 @@ public partial class MainWindow : Window
 
             // Stop timeout timer
             timeoutTimer?.Stop();
-            timeoutTimer?.Dispose();
 
             _settings.JoystickButton = buttonIndex;
-            _settings.Save();
+            if (!_settings.Save())
+            {
+                Logger.WriteLine("[MainWindow] Warning: Failed to save button capture result");
+            }
             _joystickManager?.SetTriggerButton(buttonIndex);
 
-            Dispatcher.Invoke(() =>
+            // Show success feedback
+            CaptureOverlayText.Text = $"✓ Button {buttonIndex} captured!";
+            CaptureOverlayText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 136)); // Green
+
+            // Wait 1 second before hiding overlay
+            var hideTimer = new DispatcherTimer
             {
-                // Show success feedback
-                CaptureOverlayText.Text = $"✓ Button {buttonIndex} captured!";
-                CaptureOverlayText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 136)); // Green
-
-                // Wait 1 second before hiding overlay
-                var hideTimer = new System.Timers.Timer(1000);
-                hideTimer.Elapsed += (s, e) =>
-                {
-                    hideTimer.Stop();
-                    hideTimer.Dispose();
-
-                    Dispatcher.Invoke(() =>
-                    {
-                        CaptureOverlay.Visibility = Visibility.Collapsed;
-                        // Recreate menu to update button display
-                        CreateContextMenu();
-                    });
-                };
-                hideTimer.AutoReset = false;
-                hideTimer.Start();
-            });
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            hideTimer.Tick += (s, e) =>
+            {
+                hideTimer.Stop();
+                CaptureOverlay.Visibility = Visibility.Collapsed;
+                // Recreate menu to update button display
+                CreateContextMenu();
+            };
+            hideTimer.Start();
 
             // Unsubscribe after capture
             if (_joystickManager != null)
@@ -333,11 +379,13 @@ public partial class MainWindow : Window
         _joystickManager.ButtonCaptured += captureHandler;
 
         // Add a timeout to exit capture mode if no button pressed within 10 seconds
-        timeoutTimer = new System.Timers.Timer(10000);
-        timeoutTimer.Elapsed += (s, e) =>
+        timeoutTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(10)
+        };
+        timeoutTimer.Tick += (s, e) =>
         {
             timeoutTimer.Stop();
-            timeoutTimer.Dispose();
 
             if (_joystickManager != null)
             {
@@ -345,13 +393,9 @@ public partial class MainWindow : Window
                 _joystickManager.ButtonCaptured -= captureHandler;
             }
 
-            Dispatcher.Invoke(() =>
-            {
-                CaptureOverlay.Visibility = Visibility.Collapsed;
-                Logger.WriteLine("[MainWindow] Button capture timed out");
-            });
+            CaptureOverlay.Visibility = Visibility.Collapsed;
+            Logger.WriteLine("[MainWindow] Button capture timed out");
         };
-        timeoutTimer.AutoReset = false;
         timeoutTimer.Start();
     }
 
@@ -359,14 +403,50 @@ public partial class MainWindow : Window
     {
         MainBorder.Opacity = opacity;
         _settings.Opacity = opacity;
-        _settings.Save();
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save opacity setting");
+        }
     }
 
-    private void SetSize(string size)
+    private void SetPollingRate(int milliseconds)
     {
-        ApplySize(size);
-        _settings.Size = size;
-        _settings.Save();
+        _settings.PollingRateMs = milliseconds;
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save polling rate setting");
+        }
+        _simConnectManager?.SetPollingRate(milliseconds);
+
+        // Recreate context menu to update checkmark
+        CreateContextMenu();
+    }
+
+    private void ToggleDisplay(string displayName, bool isVisible)
+    {
+        switch (displayName)
+        {
+            case "SimRate":
+                _settings.ShowSimRate = isVisible;
+                break;
+            case "GroundSpeed":
+                _settings.ShowGroundSpeed = isVisible;
+                break;
+            case "AGL":
+                _settings.ShowAGL = isVisible;
+                break;
+            case "GlideSlope":
+                _settings.ShowGlideSlope = isVisible;
+                break;
+            case "Wind":
+                _settings.ShowWind = isVisible;
+                break;
+        }
+        ApplyDisplayVisibility();
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save display visibility setting");
+        }
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -379,8 +459,8 @@ public partial class MainWindow : Window
         HwndSource source = HwndSource.FromHwnd(handle);
         source.AddHook(HandleSimConnectMessage);
 
-        // Initialize SimConnect manager
-        _simConnectManager = new SimConnectManager(handle);
+        // Initialize SimConnect manager with polling rate
+        _simConnectManager = new SimConnectManager(handle, _settings.PollingRateMs);
         _simConnectManager.DataUpdated += SimConnectManager_DataUpdated;
         _simConnectManager.ConnectionStatusChanged += SimConnectManager_ConnectionStatusChanged;
 
@@ -418,10 +498,35 @@ public partial class MainWindow : Window
         // Save window position
         _settings.WindowX = Left;
         _settings.WindowY = Top;
-        _settings.Save();
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save window position on exit");
+        }
 
-        _simConnectManager?.Shutdown();
-        _joystickManager?.Dispose();
+        // Unsubscribe all event handlers BEFORE disposing to prevent memory leaks
+        if (_simConnectManager != null)
+        {
+            _simConnectManager.DataUpdated -= SimConnectManager_DataUpdated;
+            _simConnectManager.ConnectionStatusChanged -= SimConnectManager_ConnectionStatusChanged;
+            _simConnectManager.Shutdown();
+        }
+
+        if (_joystickManager != null)
+        {
+            _joystickManager.ButtonPressed -= JoystickManager_ButtonPressed;
+            _joystickManager.Dispose();
+        }
+
+        // Remove window message hook to prevent memory leak
+        var helper = new WindowInteropHelper(this);
+        if (helper.Handle != IntPtr.Zero)
+        {
+            var source = HwndSource.FromHwnd(helper.Handle);
+            if (source != null)
+            {
+                source.RemoveHook(HandleSimConnectMessage);
+            }
+        }
     }
 
     private IntPtr HandleSimConnectMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -436,11 +541,77 @@ public partial class MainWindow : Window
 
     private void SimConnectManager_DataUpdated(object? sender, SimConnectManager.SimData data)
     {
-        Dispatcher.Invoke(() =>
+        // Pre-calculate values on background thread to avoid UI thread work
+        double simRate = Math.Round(data.SimulationRate, 2);
+        double groundSpeed = Math.Round(data.GroundSpeed, 0);
+        double agl = Math.Round(data.AltitudeAboveGround, 0);
+
+        // Calculate glide slope angle
+        double glideSlopeAngle = 0;
+        if (data.GroundSpeed > 1)
         {
-            SimRateTextBlock.Text = $"{data.SimulationRate:F2}x";
-            GroundSpeedTextBlock.Text = $"{data.GroundSpeed:F0} kts";
-        });
+            double groundSpeedFtPerMin = data.GroundSpeed * 101.269;
+            glideSlopeAngle = Math.Round(Math.Atan2(data.VerticalSpeed, groundSpeedFtPerMin) * (180 / Math.PI), 1);
+        }
+
+        // Calculate relative wind direction
+        double relativeWindAngle = data.WindDirection - data.PlaneHeading;
+        while (relativeWindAngle > 180) relativeWindAngle -= 360;
+        while (relativeWindAngle < -180) relativeWindAngle += 360;
+
+        int windSpeed = (int)Math.Round(data.WindSpeed);
+        int windAngle = (int)Math.Round(Math.Abs(relativeWindAngle));
+
+        // Only update UI if values have changed (use BeginInvoke for non-blocking)
+        if (simRate != _lastSimRate || groundSpeed != _lastGroundSpeed || agl != _lastAGL ||
+            glideSlopeAngle != _lastGlideSlope || windSpeed != _lastWindSpeed ||
+            windAngle != _lastWindAngle || relativeWindAngle != _lastWindArrowAngle)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (simRate != _lastSimRate)
+                {
+                    SimRateTextBlock.Text = $"{simRate:F2}x";
+                    _lastSimRate = simRate;
+                }
+
+                if (groundSpeed != _lastGroundSpeed)
+                {
+                    GroundSpeedTextBlock.Text = $"{groundSpeed:F0} kts";
+                    _lastGroundSpeed = groundSpeed;
+                }
+
+                if (agl != _lastAGL)
+                {
+                    AGLTextBlock.Text = $"{agl:F0} ft";
+                    _lastAGL = agl;
+                }
+
+                if (glideSlopeAngle != _lastGlideSlope)
+                {
+                    GlideSlopeTextBlock.Text = $"{glideSlopeAngle:F1}°";
+                    _lastGlideSlope = glideSlopeAngle;
+                }
+
+                if (windSpeed != _lastWindSpeed)
+                {
+                    WindSpeedTextBlock.Text = $"{windSpeed:D2} kts";
+                    _lastWindSpeed = windSpeed;
+                }
+
+                if (windAngle != _lastWindAngle)
+                {
+                    WindAngleTextBlock.Text = $"{windAngle:D3}°";
+                    _lastWindAngle = windAngle;
+                }
+
+                if (relativeWindAngle != _lastWindArrowAngle)
+                {
+                    WindArrowRotation.Angle = relativeWindAngle;
+                    _lastWindArrowAngle = relativeWindAngle;
+                }
+            });
+        }
     }
 
     private void SimConnectManager_ConnectionStatusChanged(object? sender, bool isConnected)
@@ -451,6 +622,19 @@ public partial class MainWindow : Window
             {
                 SimRateTextBlock.Text = "--";
                 GroundSpeedTextBlock.Text = "-- kts";
+                AGLTextBlock.Text = "-- ft";
+                GlideSlopeTextBlock.Text = "--°";
+                WindSpeedTextBlock.Text = "-- kts";
+                WindAngleTextBlock.Text = "--°";
+
+                // Reset cached values so first update after reconnect will show
+                _lastSimRate = -1;
+                _lastGroundSpeed = -1;
+                _lastAGL = -1;
+                _lastGlideSlope = -999;
+                _lastWindSpeed = -1;
+                _lastWindAngle = -1;
+                _lastWindArrowAngle = -999;
             }
         });
     }
