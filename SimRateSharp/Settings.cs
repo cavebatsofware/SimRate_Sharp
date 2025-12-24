@@ -37,6 +37,17 @@ public class Settings
     public bool ShowAGL { get; set; } = true;
     public bool ShowWind { get; set; } = true;
     public bool ShowGlideSlope { get; set; } = true;
+    public bool ShowTorque { get; set; } = false; // Hidden by default
+
+    // Torque limiter settings (feature disabled by default - zero overhead)
+    public bool TorqueLimiterEnabled { get; set; } = false;
+    public double MaxTorquePercent { get; set; } = 100.0; // Trigger at 100% of aircraft's rated max torque
+    public double TorqueWarningThreshold { get; set; } = 0.90; // Warn at 90% of max (yellow at 90%, red at 100%)
+
+    // Intelligent throttle reduction algorithm settings
+    public double ThrottleReductionAggression { get; set; } = 2.5; // Multiplier for overtorque severity (2.5x means 8% overtorque → 20% throttle reduction)
+    public double MinThrottlePercent { get; set; } = 40.0; // Never reduce throttle below this value (safety floor)
+    public int InterventionCooldownMs { get; set; } = 2000; // Minimum time between interventions (allows engine/prop to stabilize - 2 seconds)
 
     private static string GetSettingsPath()
     {

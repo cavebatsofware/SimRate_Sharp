@@ -38,24 +38,32 @@ public class SimConnectManager
     private bool _pollWind = true;
     private bool _pollAGL = true;
     private bool _pollGlideSlope = true;
+    private bool _pollTorque = false; // Disabled by default - zero overhead
 
     public event EventHandler<SimData>? DataUpdated;
+    public event EventHandler<TorqueData>? TorqueDataUpdated;
     public event EventHandler<bool>? ConnectionStatusChanged;
 
     private enum DEFINITIONS
     {
-        SimDataDefinition
+        SimDataDefinition,
+        TorqueDataDefinition,
+        ThrottleSetDefinition
     }
 
     private enum DATA_REQUESTS
     {
-        SimDataRequest
+        SimDataRequest,
+        TorqueDataRequest
     }
 
     private enum EVENTS
     {
         SimRateIncrease,
-        SimRateDecrease
+        SimRateDecrease,
+        ThrottleSet,
+        Throttle1Set,
+        Throttle1AxisSet
     }
 
     private enum NOTIFICATION_GROUPS
@@ -84,6 +92,74 @@ public class SimConnectManager
         public double PlaneHeading { get; set; }
         public double AltitudeAboveGround { get; set; }
         public double VerticalSpeed { get; set; }
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    public struct TorqueDataStruct
+    {
+        // Fixed arrays for up to 4 engines (interleaved: torque, percent, throttle for each)
+        // Engine 1
+        public double Engine1Torque;
+        public double Engine1TorquePercent;
+        public double Engine1Throttle;
+        // Engine 2
+        public double Engine2Torque;
+        public double Engine2TorquePercent;
+        public double Engine2Throttle;
+        // Engine 3
+        public double Engine3Torque;
+        public double Engine3TorquePercent;
+        public double Engine3Throttle;
+        // Engine 4
+        public double Engine4Torque;
+        public double Engine4TorquePercent;
+        public double Engine4Throttle;
+
+        public double NumberOfEngines;
+
+        // Helper method to extract data into arrays
+        public (double[] torques, double[] percents, double[] throttles, int numEngines) ToArrays()
+        {
+            int n = (int)NumberOfEngines;
+            double[] torques = new[] { Engine1Torque, Engine2Torque, Engine3Torque, Engine4Torque };
+            double[] percents = new[] { Engine1TorquePercent, Engine2TorquePercent, Engine3TorquePercent, Engine4TorquePercent };
+            double[] throttles = new[] { Engine1Throttle, Engine2Throttle, Engine3Throttle, Engine4Throttle };
+            return (torques, percents, throttles, n);
+        }
+    }
+
+    public class EngineData
+    {
+        public double Torque { get; set; }
+        public double TorquePercent { get; set; }
+        public double ThrottlePosition { get; set; }
+    }
+
+    public class TorqueData
+    {
+        public EngineData[] Engines { get; set; } = Array.Empty<EngineData>();
+        public int NumberOfEngines { get; set; }
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    public struct ThrottleSetStruct
+    {
+        public double Throttle1Percent;
+        public double Throttle2Percent;
+        public double Throttle3Percent;
+        public double Throttle4Percent;
+
+        // Helper to create from array
+        public static ThrottleSetStruct FromArray(double[] throttles)
+        {
+            return new ThrottleSetStruct
+            {
+                Throttle1Percent = throttles.Length > 0 ? throttles[0] : 0,
+                Throttle2Percent = throttles.Length > 1 ? throttles[1] : 0,
+                Throttle3Percent = throttles.Length > 2 ? throttles[2] : 0,
+                Throttle4Percent = throttles.Length > 3 ? throttles[3] : 0
+            };
+        }
     }
 
     public SimConnectManager(IntPtr handle, int pollingRateMs = 500)
@@ -237,6 +313,147 @@ public class SimConnectManager
         }
     }
 
+    public void EnableTorqueMonitoring()
+    {
+        if (_pollTorque)
+            return; // Already enabled
+
+        Logger.WriteLine("[SimConnectManager] Enabling torque monitoring");
+        _pollTorque = true;
+
+        if (_simConnect == null || !_isConnected)
+            return;
+
+        try
+        {
+            // Register torque data definition for all 4 engines
+            for (int i = 1; i <= 4; i++)
+            {
+                _simConnect.AddToDataDefinition(
+                    DEFINITIONS.TorqueDataDefinition,
+                    $"ENG TORQUE:{i}",
+                    "Foot pounds",
+                    SIMCONNECT_DATATYPE.FLOAT64,
+                    0.0f,
+                    SimConnect.SIMCONNECT_UNUSED
+                );
+
+                _simConnect.AddToDataDefinition(
+                    DEFINITIONS.TorqueDataDefinition,
+                    $"TURB ENG MAX TORQUE PERCENT:{i}",
+                    "Percent",
+                    SIMCONNECT_DATATYPE.FLOAT64,
+                    0.0f,
+                    SimConnect.SIMCONNECT_UNUSED
+                );
+
+                _simConnect.AddToDataDefinition(
+                    DEFINITIONS.TorqueDataDefinition,
+                    $"GENERAL ENG THROTTLE LEVER POSITION:{i}",
+                    "Percent",
+                    SIMCONNECT_DATATYPE.FLOAT64,
+                    0.0f,
+                    SimConnect.SIMCONNECT_UNUSED
+                );
+            }
+
+            // Add number of engines
+            _simConnect.AddToDataDefinition(
+                DEFINITIONS.TorqueDataDefinition,
+                "NUMBER OF ENGINES",
+                "Number",
+                SIMCONNECT_DATATYPE.FLOAT64,
+                0.0f,
+                SimConnect.SIMCONNECT_UNUSED
+            );
+
+            _simConnect.RegisterDataDefineStruct<TorqueDataStruct>(DEFINITIONS.TorqueDataDefinition);
+
+            // Register throttle set definition for all 4 engines
+            for (int i = 1; i <= 4; i++)
+            {
+                _simConnect.AddToDataDefinition(
+                    DEFINITIONS.ThrottleSetDefinition,
+                    $"GENERAL ENG THROTTLE LEVER POSITION:{i}",
+                    "Percent",
+                    SIMCONNECT_DATATYPE.FLOAT64,
+                    0.0f,
+                    SimConnect.SIMCONNECT_UNUSED
+                );
+            }
+            _simConnect.RegisterDataDefineStruct<ThrottleSetStruct>(DEFINITIONS.ThrottleSetDefinition);
+
+            Logger.WriteLine("[SimConnectManager] Torque monitoring enabled successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.WriteLine($"[SimConnectManager] Failed to enable torque monitoring: {ex.Message}");
+        }
+    }
+
+    public void DisableTorqueMonitoring()
+    {
+        if (!_pollTorque)
+            return; // Already disabled
+
+        Logger.WriteLine("[SimConnectManager] Disabling torque monitoring");
+        _pollTorque = false;
+
+        if (_simConnect == null || !_isConnected)
+            return;
+
+        try
+        {
+            _simConnect.ClearDataDefinition(DEFINITIONS.TorqueDataDefinition);
+            Logger.WriteLine("[SimConnectManager] Torque monitoring disabled successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.WriteLine($"[SimConnectManager] Failed to disable torque monitoring: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Sets throttles to absolute percentage values (0-100%) for all engines.
+    /// Uses SetDataOnSimObject to directly write throttle values, overriding hardware input.
+    /// </summary>
+    public void SetThrottlesAbsolute(double[] targetThrottlePercents)
+    {
+        if (_simConnect == null || !_isConnected) return;
+
+        try
+        {
+            // Clamp all values to valid range
+            var clampedThrottles = targetThrottlePercents.Select(t => Math.Max(0.0, Math.Min(100.0, t))).ToArray();
+
+            Logger.WriteLine($"[SimConnectManager] Setting throttles: [{string.Join(", ", clampedThrottles.Select(t => $"{t:F1}%"))}] (via SetDataOnSimObject)");
+
+            // Use SetDataOnSimObject to directly write throttle positions
+            var throttleData = ThrottleSetStruct.FromArray(clampedThrottles);
+
+            _simConnect.SetDataOnSimObject(
+                DEFINITIONS.ThrottleSetDefinition,
+                SimConnect.SIMCONNECT_OBJECT_ID_USER,
+                SIMCONNECT_DATA_SET_FLAG.DEFAULT,
+                throttleData
+            );
+
+            Logger.WriteLine($"[SimConnectManager] Throttle set command sent successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.WriteLine($"[SimConnectManager] Failed to set throttles: {ex.Message}");
+            Logger.WriteLine($"[SimConnectManager] Exception details: {ex.GetType().Name}");
+        }
+    }
+
+    [Obsolete("Use SetThrottlesAbsolute instead - supports multi-engine")]
+    public void ReduceThrottle(double currentThrottlePercent, int percentReduction)
+    {
+        double newThrottlePercent = currentThrottlePercent * (1.0 - (percentReduction / 100.0));
+        SetThrottlesAbsolute(new[] { newThrottlePercent });
+    }
+
     private void TryConnect()
     {
         if (_isConnected) return;
@@ -300,6 +517,17 @@ public class SimConnectManager
                 0,
                 SIMCONNECT_SIMOBJECT_TYPE.USER
             );
+
+            // Poll torque data if monitoring is enabled
+            if (_pollTorque)
+            {
+                _simConnect.RequestDataOnSimObjectType(
+                    DATA_REQUESTS.TorqueDataRequest,
+                    DEFINITIONS.TorqueDataDefinition,
+                    0,
+                    SIMCONNECT_SIMOBJECT_TYPE.USER
+                );
+            }
         }
         catch (COMException ex)
         {
@@ -323,6 +551,29 @@ public class SimConnectManager
                 PlaneHeading = simData.PlaneHeading,
                 AltitudeAboveGround = simData.AltitudeAboveGround,
                 VerticalSpeed = simData.VerticalSpeed
+            });
+        }
+        else if (data.dwRequestID == (uint)DATA_REQUESTS.TorqueDataRequest)
+        {
+            var torqueData = (TorqueDataStruct)data.dwData[0];
+            var (torques, percents, throttles, numEngines) = torqueData.ToArrays();
+
+            // Convert to EngineData array (only include actual engines)
+            var engines = new EngineData[numEngines];
+            for (int i = 0; i < numEngines; i++)
+            {
+                engines[i] = new EngineData
+                {
+                    Torque = torques[i],
+                    TorquePercent = percents[i],
+                    ThrottlePosition = throttles[i]
+                };
+            }
+
+            TorqueDataUpdated?.Invoke(this, new TorqueData
+            {
+                Engines = engines,
+                NumberOfEngines = numEngines
             });
         }
     }
