@@ -42,7 +42,7 @@ public class JoystickManager : IDisposable
     {
         _pollTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(50) // Poll 20 times per second
+            Interval = TimeSpan.FromMilliseconds(250) // Poll 4 times per second (reduced from 50ms to avoid USB contention)
         };
         _pollTimer.Tick += PollTimer_Tick;
 

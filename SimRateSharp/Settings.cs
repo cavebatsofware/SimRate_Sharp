@@ -54,27 +54,38 @@ public class Settings
             if (File.Exists(path))
             {
                 var json = File.ReadAllText(path);
-                return JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
+                var settings = JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
+                Logger.WriteLine($"[Settings] Loaded settings from {path}");
+                return settings;
+            }
+            else
+            {
+                Logger.WriteLine($"[Settings] No settings file found at {path}, using defaults");
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // If loading fails, return defaults
+            Logger.WriteLine($"[Settings] Failed to load settings: {ex.Message}");
+            Logger.WriteLine($"[Settings] Using default settings");
         }
         return new Settings();
     }
 
-    public void Save()
+    public bool Save()
     {
         try
         {
             var path = GetSettingsPath();
             var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(path, json);
+            Logger.WriteLine($"[Settings] Successfully saved settings to {path}");
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently fail if we can't save settings
+            Logger.WriteLine($"[Settings] Failed to save settings: {ex.Message}");
+            Logger.WriteLine($"Stack trace: {ex.StackTrace}");
+            return false;
         }
     }
 }

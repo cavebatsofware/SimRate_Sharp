@@ -21,6 +21,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Threading;
 
 namespace SimRateSharp;
 
@@ -33,6 +34,15 @@ public partial class MainWindow : Window
     private JoystickManager? _joystickManager;
     private Settings _settings;
     private const int WM_USER_SIMCONNECT = 0x0402;
+
+    // Cache previous values to avoid unnecessary UI updates
+    private double _lastSimRate = -1;
+    private double _lastGroundSpeed = -1;
+    private double _lastAGL = -1;
+    private double _lastGlideSlope = -999;
+    private int _lastWindSpeed = -1;
+    private int _lastWindAngle = -1;
+    private double _lastWindArrowAngle = -999;
 
     public MainWindow()
     {
@@ -108,6 +118,12 @@ public partial class MainWindow : Window
 
     private void CreateContextMenu()
     {
+        // Dispose old context menu to prevent lambda handler accumulation
+        if (MainBorder.ContextMenu != null)
+        {
+            MainBorder.ContextMenu = null;
+        }
+
         var contextMenu = new ContextMenu();
 
         // Display visibility submenu
@@ -231,7 +247,10 @@ public partial class MainWindow : Window
             _joystickManager?.ClearTriggerButton();
         }
 
-        _settings.Save();
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save joystick device selection");
+        }
 
         _joystickManager?.SelectDevice(deviceIndex);
 
@@ -280,7 +299,10 @@ public partial class MainWindow : Window
             clearItem.Click += (s, args) =>
             {
                 _settings.JoystickButton = null;
-                _settings.Save();
+                if (!_settings.Save())
+                {
+                    Logger.WriteLine("[MainWindow] Warning: Failed to save cleared button setting");
+                }
                 _joystickManager?.ClearTriggerButton();
                 // Recreate menu to update button display
                 CreateContextMenu();
@@ -313,7 +335,7 @@ public partial class MainWindow : Window
 
         // Subscribe to capture event (one-time)
         EventHandler<int>? captureHandler = null;
-        System.Timers.Timer? timeoutTimer = null;
+        DispatcherTimer? timeoutTimer = null;
 
         captureHandler = (sender, buttonIndex) =>
         {
@@ -321,35 +343,31 @@ public partial class MainWindow : Window
 
             // Stop timeout timer
             timeoutTimer?.Stop();
-            timeoutTimer?.Dispose();
 
             _settings.JoystickButton = buttonIndex;
-            _settings.Save();
+            if (!_settings.Save())
+            {
+                Logger.WriteLine("[MainWindow] Warning: Failed to save button capture result");
+            }
             _joystickManager?.SetTriggerButton(buttonIndex);
 
-            Dispatcher.Invoke(() =>
+            // Show success feedback
+            CaptureOverlayText.Text = $"✓ Button {buttonIndex} captured!";
+            CaptureOverlayText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 136)); // Green
+
+            // Wait 1 second before hiding overlay
+            var hideTimer = new DispatcherTimer
             {
-                // Show success feedback
-                CaptureOverlayText.Text = $"✓ Button {buttonIndex} captured!";
-                CaptureOverlayText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 136)); // Green
-
-                // Wait 1 second before hiding overlay
-                var hideTimer = new System.Timers.Timer(1000);
-                hideTimer.Elapsed += (s, e) =>
-                {
-                    hideTimer.Stop();
-                    hideTimer.Dispose();
-
-                    Dispatcher.Invoke(() =>
-                    {
-                        CaptureOverlay.Visibility = Visibility.Collapsed;
-                        // Recreate menu to update button display
-                        CreateContextMenu();
-                    });
-                };
-                hideTimer.AutoReset = false;
-                hideTimer.Start();
-            });
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            hideTimer.Tick += (s, e) =>
+            {
+                hideTimer.Stop();
+                CaptureOverlay.Visibility = Visibility.Collapsed;
+                // Recreate menu to update button display
+                CreateContextMenu();
+            };
+            hideTimer.Start();
 
             // Unsubscribe after capture
             if (_joystickManager != null)
@@ -361,11 +379,13 @@ public partial class MainWindow : Window
         _joystickManager.ButtonCaptured += captureHandler;
 
         // Add a timeout to exit capture mode if no button pressed within 10 seconds
-        timeoutTimer = new System.Timers.Timer(10000);
-        timeoutTimer.Elapsed += (s, e) =>
+        timeoutTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(10)
+        };
+        timeoutTimer.Tick += (s, e) =>
         {
             timeoutTimer.Stop();
-            timeoutTimer.Dispose();
 
             if (_joystickManager != null)
             {
@@ -373,13 +393,9 @@ public partial class MainWindow : Window
                 _joystickManager.ButtonCaptured -= captureHandler;
             }
 
-            Dispatcher.Invoke(() =>
-            {
-                CaptureOverlay.Visibility = Visibility.Collapsed;
-                Logger.WriteLine("[MainWindow] Button capture timed out");
-            });
+            CaptureOverlay.Visibility = Visibility.Collapsed;
+            Logger.WriteLine("[MainWindow] Button capture timed out");
         };
-        timeoutTimer.AutoReset = false;
         timeoutTimer.Start();
     }
 
@@ -387,13 +403,19 @@ public partial class MainWindow : Window
     {
         MainBorder.Opacity = opacity;
         _settings.Opacity = opacity;
-        _settings.Save();
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save opacity setting");
+        }
     }
 
     private void SetPollingRate(int milliseconds)
     {
         _settings.PollingRateMs = milliseconds;
-        _settings.Save();
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save polling rate setting");
+        }
         _simConnectManager?.SetPollingRate(milliseconds);
 
         // Recreate context menu to update checkmark
@@ -421,7 +443,10 @@ public partial class MainWindow : Window
                 break;
         }
         ApplyDisplayVisibility();
-        _settings.Save();
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save display visibility setting");
+        }
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -473,10 +498,35 @@ public partial class MainWindow : Window
         // Save window position
         _settings.WindowX = Left;
         _settings.WindowY = Top;
-        _settings.Save();
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save window position on exit");
+        }
 
-        _simConnectManager?.Shutdown();
-        _joystickManager?.Dispose();
+        // Unsubscribe all event handlers BEFORE disposing to prevent memory leaks
+        if (_simConnectManager != null)
+        {
+            _simConnectManager.DataUpdated -= SimConnectManager_DataUpdated;
+            _simConnectManager.ConnectionStatusChanged -= SimConnectManager_ConnectionStatusChanged;
+            _simConnectManager.Shutdown();
+        }
+
+        if (_joystickManager != null)
+        {
+            _joystickManager.ButtonPressed -= JoystickManager_ButtonPressed;
+            _joystickManager.Dispose();
+        }
+
+        // Remove window message hook to prevent memory leak
+        var helper = new WindowInteropHelper(this);
+        if (helper.Handle != IntPtr.Zero)
+        {
+            var source = HwndSource.FromHwnd(helper.Handle);
+            if (source != null)
+            {
+                source.RemoveHook(HandleSimConnectMessage);
+            }
+        }
     }
 
     private IntPtr HandleSimConnectMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -491,46 +541,77 @@ public partial class MainWindow : Window
 
     private void SimConnectManager_DataUpdated(object? sender, SimConnectManager.SimData data)
     {
-        Dispatcher.Invoke(() =>
+        // Pre-calculate values on background thread to avoid UI thread work
+        double simRate = Math.Round(data.SimulationRate, 2);
+        double groundSpeed = Math.Round(data.GroundSpeed, 0);
+        double agl = Math.Round(data.AltitudeAboveGround, 0);
+
+        // Calculate glide slope angle
+        double glideSlopeAngle = 0;
+        if (data.GroundSpeed > 1)
         {
-            SimRateTextBlock.Text = $"{data.SimulationRate:F2}x";
-            GroundSpeedTextBlock.Text = $"{data.GroundSpeed:F0} kts";
+            double groundSpeedFtPerMin = data.GroundSpeed * 101.269;
+            glideSlopeAngle = Math.Round(Math.Atan2(data.VerticalSpeed, groundSpeedFtPerMin) * (180 / Math.PI), 1);
+        }
 
-            // Update AGL display
-            AGLTextBlock.Text = $"{data.AltitudeAboveGround:F0} ft";
+        // Calculate relative wind direction
+        double relativeWindAngle = data.WindDirection - data.PlaneHeading;
+        while (relativeWindAngle > 180) relativeWindAngle -= 360;
+        while (relativeWindAngle < -180) relativeWindAngle += 360;
 
-            // Calculate glide slope angle
-            // Glide slope = arctan(vertical speed / horizontal speed)
-            // VS is in ft/min, GS is in knots. Convert GS to ft/min: 1 knot = 101.269 ft/min
-            double glideSlopeAngle = 0;
-            if (data.GroundSpeed > 1) // Only calculate if moving
+        int windSpeed = (int)Math.Round(data.WindSpeed);
+        int windAngle = (int)Math.Round(Math.Abs(relativeWindAngle));
+
+        // Only update UI if values have changed (use BeginInvoke for non-blocking)
+        if (simRate != _lastSimRate || groundSpeed != _lastGroundSpeed || agl != _lastAGL ||
+            glideSlopeAngle != _lastGlideSlope || windSpeed != _lastWindSpeed ||
+            windAngle != _lastWindAngle || relativeWindAngle != _lastWindArrowAngle)
+        {
+            Dispatcher.BeginInvoke(() =>
             {
-                double groundSpeedFtPerMin = data.GroundSpeed * 101.269;
-                glideSlopeAngle = Math.Atan2(data.VerticalSpeed, groundSpeedFtPerMin) * (180 / Math.PI);
-            }
-            GlideSlopeTextBlock.Text = $"{glideSlopeAngle:F1}°";
+                if (simRate != _lastSimRate)
+                {
+                    SimRateTextBlock.Text = $"{simRate:F2}x";
+                    _lastSimRate = simRate;
+                }
 
-            // Calculate relative wind direction
-            // Wind direction is where wind is coming FROM
-            // Relative angle: positive = wind from right, negative = wind from left
-            // 0° = headwind, 180° = tailwind
-            double relativeWindAngle = data.WindDirection - data.PlaneHeading;
+                if (groundSpeed != _lastGroundSpeed)
+                {
+                    GroundSpeedTextBlock.Text = $"{groundSpeed:F0} kts";
+                    _lastGroundSpeed = groundSpeed;
+                }
 
-            // Normalize to -180 to +180 range
-            while (relativeWindAngle > 180) relativeWindAngle -= 360;
-            while (relativeWindAngle < -180) relativeWindAngle += 360;
+                if (agl != _lastAGL)
+                {
+                    AGLTextBlock.Text = $"{agl:F0} ft";
+                    _lastAGL = agl;
+                }
 
-            // Update wind display with zero-padding
-            int windSpeed = (int)Math.Round(data.WindSpeed);
-            int windAngle = (int)Math.Round(Math.Abs(relativeWindAngle));
+                if (glideSlopeAngle != _lastGlideSlope)
+                {
+                    GlideSlopeTextBlock.Text = $"{glideSlopeAngle:F1}°";
+                    _lastGlideSlope = glideSlopeAngle;
+                }
 
-            WindSpeedTextBlock.Text = $"{windSpeed:D2} kts";
-            WindAngleTextBlock.Text = $"{windAngle:D3}°";
+                if (windSpeed != _lastWindSpeed)
+                {
+                    WindSpeedTextBlock.Text = $"{windSpeed:D2} kts";
+                    _lastWindSpeed = windSpeed;
+                }
 
-            // Rotate arrow to show wind direction relative to aircraft
-            // Arrow points in direction wind is coming FROM
-            WindArrowRotation.Angle = relativeWindAngle;
-        });
+                if (windAngle != _lastWindAngle)
+                {
+                    WindAngleTextBlock.Text = $"{windAngle:D3}°";
+                    _lastWindAngle = windAngle;
+                }
+
+                if (relativeWindAngle != _lastWindArrowAngle)
+                {
+                    WindArrowRotation.Angle = relativeWindAngle;
+                    _lastWindArrowAngle = relativeWindAngle;
+                }
+            });
+        }
     }
 
     private void SimConnectManager_ConnectionStatusChanged(object? sender, bool isConnected)
@@ -545,6 +626,15 @@ public partial class MainWindow : Window
                 GlideSlopeTextBlock.Text = "--°";
                 WindSpeedTextBlock.Text = "-- kts";
                 WindAngleTextBlock.Text = "--°";
+
+                // Reset cached values so first update after reconnect will show
+                _lastSimRate = -1;
+                _lastGroundSpeed = -1;
+                _lastAGL = -1;
+                _lastGlideSlope = -999;
+                _lastWindSpeed = -1;
+                _lastWindAngle = -1;
+                _lastWindArrowAngle = -999;
             }
         });
     }

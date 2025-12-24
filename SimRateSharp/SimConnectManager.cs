@@ -275,7 +275,10 @@ public class SimConnectManager
             {
                 _simConnect.Dispose();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.WriteLine($"[SimConnectManager] Error disposing SimConnect during disconnect: {ex.Message}");
+            }
             _simConnect = null;
         }
 
@@ -305,10 +308,14 @@ public class SimConnectManager
 
             // Send the appropriate number of increase/decrease events
             // We'll use a different approach: just send events until we're close
+            // Safety limit: max 10 iterations (0.25 to 128 is only 9 doublings)
+            const int MAX_ITERATIONS = 10;
+            int iterations = 0;
+
             if (targetRate < _currentSimRate)
             {
                 // Decreasing - send decrease events
-                while (_currentSimRate > targetRate + 0.01)
+                while (_currentSimRate > targetRate + 0.01 && iterations < MAX_ITERATIONS)
                 {
                     _simConnect.TransmitClientEvent(
                         SimConnect.SIMCONNECT_OBJECT_ID_USER,
@@ -319,12 +326,17 @@ public class SimConnectManager
                     );
                     // Estimate new rate (each decrease roughly halves it)
                     _currentSimRate = Math.Max(0.25, _currentSimRate / 2);
+                    iterations++;
+                }
+                if (iterations >= MAX_ITERATIONS)
+                {
+                    Logger.WriteLine($"[SimConnectManager] Warning: Hit iteration limit while decreasing sim rate from {_currentSimRate} to {targetRate}");
                 }
             }
             else
             {
                 // Increasing - send increase events
-                while (_currentSimRate < targetRate - 0.01)
+                while (_currentSimRate < targetRate - 0.01 && iterations < MAX_ITERATIONS)
                 {
                     _simConnect.TransmitClientEvent(
                         SimConnect.SIMCONNECT_OBJECT_ID_USER,
@@ -335,6 +347,11 @@ public class SimConnectManager
                     );
                     // Estimate new rate (each increase roughly doubles it)
                     _currentSimRate = Math.Min(128, _currentSimRate * 2);
+                    iterations++;
+                }
+                if (iterations >= MAX_ITERATIONS)
+                {
+                    Logger.WriteLine($"[SimConnectManager] Warning: Hit iteration limit while increasing sim rate from {_currentSimRate} to {targetRate}");
                 }
             }
         }
@@ -356,7 +373,10 @@ public class SimConnectManager
             {
                 _simConnect.Dispose();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.WriteLine($"[SimConnectManager] Error disposing SimConnect during shutdown: {ex.Message}");
+            }
             _simConnect = null;
         }
     }
