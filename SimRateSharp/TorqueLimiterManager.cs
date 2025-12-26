@@ -26,6 +26,7 @@ public class TorqueLimiterManager : IDisposable
     private bool _isLimiting = false;
     private int _interventionCount = 0;
     private DateTime _lastInterventionTime = DateTime.MinValue;
+    private int _lastEngineCount = 0;
 
     // Note: TorqueUpdated event removed - UI updates directly from SimConnect data
     // Only LimitTriggered event is used for throttle intervention
@@ -48,7 +49,21 @@ public class TorqueLimiterManager : IDisposable
 
     public void ProcessTorqueData(SimConnectManager.EngineData[] engines)
     {
-        if (!_settings.TorqueLimiterEnabled || engines.Length == 0)
+        if (!_settings.TorqueLimiterEnabled)
+            return;
+
+        // Detect when engines become available (aircraft loaded)
+        if (_lastEngineCount == 0 && engines.Length > 0)
+        {
+            Logger.WriteLine($"[TorqueLimiter] Engines detected: {engines.Length} engine(s) now available");
+            _isLimiting = false;
+            _interventionCount = 0;
+            _lastInterventionTime = DateTime.MinValue;
+        }
+
+        _lastEngineCount = engines.Length;
+
+        if (engines.Length == 0)
             return;
 
         // Use percentage-based limits
