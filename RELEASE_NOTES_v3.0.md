@@ -96,14 +96,8 @@ All new torque limiter parameters are automatically saved to `settings.json`:
 
 ## Bug Fixes
 
-### Throttle Control
-- **Hardware Override Fix** - Changed from `THROTTLE_AXIS_SET_EX1` events to `SetDataOnSimObject` for reliable control
-- **Absolute Positioning** - Uses read-calculate-set strategy instead of relative adjustments
-- **Multi-Engine Support** - Throttle commands now work with arrays for all engines simultaneously
-
 ### UI Stability
 - **Panel Spacing** - Fixed inconsistent margins when toggling display panels
-- **Memory Cleanup** - Removed unused event handlers and fields that were causing warnings
 
 ---
 
@@ -118,7 +112,7 @@ All new torque limiter parameters are automatically saved to `settings.json`:
 ### From v2.0 to v3.0
 
 1. **Settings Migration** - Existing `settings.json` will automatically gain new default values for torque limiter parameters
-2. **Clean Install** (Optional) - For cleanest experience, delete `%APPDATA%\SimRateSharp\settings.json` before first launch of v3.0
+2. **Clean Install** (Optional) - If unexpected behavior is observed, delete `%APPDATA%\SimRateSharp\settings.json` before first launch of v3.0. This should not be needed unless the file was modified.
 3. **Feature Activation** - Overtorque Protection is **disabled by default**; enable via context menu → Torque Limiter → Enable
 
 ### Recommended Configuration for CL-415 Firefighting
@@ -126,9 +120,9 @@ All new torque limiter parameters are automatically saved to `settings.json`:
 ```
 Max Torque: 100%
 Warning Threshold: 90%
-Reduction Aggression: 2.5x
+Reduction Aggression: 2.8x
 Minimum Throttle: 40%
-Intervention Cooldown: 2000ms
+Intervention Cooldown: 3000ms
 ```
 
 These settings provide smooth, effective protection during water bombing operations without interfering with normal flight operations.
