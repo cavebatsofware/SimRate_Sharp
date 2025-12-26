@@ -2,7 +2,7 @@
 ; https://jrsoftware.org/isinfo.php
 
 #define MyAppName "SimRate Sharp"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "3.0.0"
 #define MyAppPublisher "SimRate Sharp Contributors"
 #define MyAppURL "https://github.com/cavebatsofware/SimRate_Sharp"
 #define MyAppExeName "SimRateSharp.exe"

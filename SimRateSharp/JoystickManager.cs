@@ -37,6 +37,7 @@ public class JoystickManager : IDisposable
 
     public event EventHandler? ButtonPressed;
     public event EventHandler<int>? ButtonCaptured;
+    public event EventHandler<string>? DeviceError;
 
     public JoystickManager()
     {
@@ -239,8 +240,13 @@ public class JoystickManager : IDisposable
             try
             {
                 _joystick?.Acquire();
+                Logger.WriteLine($"[JoystickManager] Successfully reacquired joystick");
             }
-            catch { }
+            catch (Exception reacquireEx)
+            {
+                Logger.WriteLine($"[JoystickManager] CRITICAL: Failed to reacquire joystick: {reacquireEx.Message}");
+                DeviceError?.Invoke(this, $"Lost connection to joystick and failed to reacquire: {reacquireEx.Message}");
+            }
         }
     }
 

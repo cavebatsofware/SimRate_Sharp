@@ -82,22 +82,17 @@
 
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>  <!-- SimRate (with Reset Button) -->
+                <ColumnDefinition Width="Auto"/>  <!-- GroundSpeed -->
+                <ColumnDefinition Width="Auto"/>  <!-- AGL -->
+                <ColumnDefinition Width="Auto"/>  <!-- GlideSlope -->
+                <ColumnDefinition Width="Auto"/>  <!-- Wind -->
+                <ColumnDefinition Width="Auto"/>  <!-- Torque -->
             </Grid.ColumnDefinitions>
 
             <!-- Capture Mode Overlay -->
             <Border x:Name="CaptureOverlay"
-                    Grid.ColumnSpan="11"
+                    Grid.ColumnSpan="6"
                     Background="#E0000000"
                     CornerRadius="6"
                     Visibility="Collapsed"
@@ -119,34 +114,49 @@
                 </TextBlock>
             </Border>
 
-            <!-- Sim Rate Display -->
-            <StackPanel x:Name="SimRatePanel" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <!-- Sim Rate Display with Reset Button -->
+            <StackPanel x:Name="SimRatePanel" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
                 <TextBlock Text="⚡ SIM RATE"
                            FontSize="10"
                            Foreground="#80FFFFFF"
                            HorizontalAlignment="Center"
                            FontWeight="SemiBold"
                            Margin="0,0,0,2"/>
-                <TextBlock x:Name="SimRateTextBlock"
-                           Text="--"
-                           FontSize="24"
-                           FontWeight="Bold"
-                           Foreground="#00D9FF"
-                           HorizontalAlignment="Center">
-                    <TextBlock.Effect>
-                        <DropShadowEffect Color="#00D9FF"
-                                        Opacity="0.6"
-                                        BlurRadius="8"
-                                        ShadowDepth="0"/>
-                    </TextBlock.Effect>
-                </TextBlock>
+                <Grid HorizontalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="SimRateTextBlock"
+                               Grid.Column="0"
+                               Text="--"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="#00D9FF"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,8,0">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="#00D9FF"
+                                            Opacity="0.6"
+                                            BlurRadius="8"
+                                            ShadowDepth="0"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+
+                    <Button x:Name="ResetButton"
+                            Grid.Column="1"
+                            Content="1x"
+                            Style="{StaticResource ModernButton}"
+                            Click="ResetButton_Click"
+                            VerticalAlignment="Center"
+                            MinWidth="40"
+                            Height="28"/>
+                </Grid>
             </StackPanel>
 
-            <!-- Separator 1 -->
-            <Border x:Name="Separator1" Grid.Column="1" Width="20"/>
-
             <!-- Ground Speed Display -->
-            <StackPanel x:Name="GroundSpeedPanel" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel x:Name="GroundSpeedPanel" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
                 <TextBlock Text="🛫 GROUND SPEED"
                            FontSize="10"
                            Foreground="#80FFFFFF"
@@ -168,11 +178,8 @@
                 </TextBlock>
             </StackPanel>
 
-            <!-- Separator 2 -->
-            <Border x:Name="Separator2" Grid.Column="3" Width="20"/>
-
             <!-- AGL Display -->
-            <StackPanel x:Name="AGLPanel" Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel x:Name="AGLPanel" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
                 <TextBlock Text="📏 AGL"
                            FontSize="10"
                            Foreground="#80FFFFFF"
@@ -194,11 +201,8 @@
                 </TextBlock>
             </StackPanel>
 
-            <!-- Separator 3 -->
-            <Border x:Name="Separator3" Grid.Column="5" Width="20"/>
-
             <!-- Glide Slope Display -->
-            <StackPanel x:Name="GlideSlopePanel" Grid.Column="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel x:Name="GlideSlopePanel" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
                 <TextBlock Text="📐 GLIDE"
                            FontSize="10"
                            Foreground="#80FFFFFF"
@@ -220,11 +224,8 @@
                 </TextBlock>
             </StackPanel>
 
-            <!-- Separator 4 -->
-            <Border x:Name="Separator4" Grid.Column="7" Width="20"/>
-
             <!-- Wind Display -->
-            <StackPanel x:Name="WindPanel" Grid.Column="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel x:Name="WindPanel" Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
                 <TextBlock Text="💨 WIND"
                            FontSize="10"
                            Foreground="#80FFFFFF"
@@ -302,17 +303,20 @@
                 </Grid>
             </StackPanel>
 
-            <!-- Separator 5 -->
-            <Border x:Name="Separator5" Grid.Column="9" Width="20"/>
+            <!-- Torque Display (hidden by default) - Vertical Bar Gauges -->
+            <StackPanel x:Name="TorquePanel" Grid.Column="5" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" Margin="10,0">
+                <TextBlock Text="⚙️ TORQUE"
+                           FontSize="10"
+                           Foreground="#80FFFFFF"
+                           HorizontalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,4"/>
 
-            <!-- 1x Reset Button -->
-            <Button x:Name="ResetButton"
-                    Grid.Column="10"
-                    Content="1x"
-                    Style="{StaticResource ModernButton}"
-                    Click="ResetButton_Click"
-                    VerticalAlignment="Center"
-                    MinWidth="50"/>
+                <!-- Container for engine bars (up to 4) -->
+                <StackPanel x:Name="TorqueBarsContainer" Orientation="Horizontal" HorizontalAlignment="Center" Height="40">
+                    <!-- Bars will be added dynamically in code-behind -->
+                </StackPanel>
+            </StackPanel>
         </Grid>
     </Border>
 </Window>
