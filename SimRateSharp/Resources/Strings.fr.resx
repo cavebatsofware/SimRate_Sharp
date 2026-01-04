@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" use="preserve" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Main Window Panel Headers (French - using ICAO standard abbreviations) -->
+  <data name="Panel_SimRate" xml:space="preserve">
+    <value>⚡ TAUX DE SIMULATION</value>
+    <comment>Simulation rate display panel header</comment>
+  </data>
+  <data name="Panel_GroundSpeed" xml:space="preserve">
+    <value>🛫 GROUND SPEED</value>
+    <comment>Ground speed display panel header (ICAO standard)</comment>
+  </data>
+  <data name="Panel_AGL" xml:space="preserve">
+    <value>📏 AGL</value>
+    <comment>Above Ground Level altitude display panel header (ICAO standard abbreviation)</comment>
+  </data>
+  <data name="Panel_Glide" xml:space="preserve">
+    <value>📐 GLIDE SLOPE</value>
+    <comment>Glide slope display panel header (ICAO standard)</comment>
+  </data>
+  <data name="Panel_Wind" xml:space="preserve">
+    <value>💨 VENT</value>
+    <comment>Wind information display panel header</comment>
+  </data>
+  <data name="Panel_Torque" xml:space="preserve">
+    <value>⚙️ COUPLE</value>
+    <comment>Engine torque display panel header (French aviation standard)</comment>
+  </data>
+
+  <!-- Units (ICAO standard) -->
+  <data name="Unit_Knots" xml:space="preserve">
+    <value>kts</value>
+    <comment>Knots abbreviation (ICAO standard)</comment>
+  </data>
+  <data name="Unit_KilometersPerHour" xml:space="preserve">
+    <value>km/h</value>
+    <comment>Kilometers per hour abbreviation</comment>
+  </data>
+  <data name="Unit_MilesPerHour" xml:space="preserve">
+    <value>mph</value>
+    <comment>Miles per hour abbreviation</comment>
+  </data>
+  <data name="Unit_Meters" xml:space="preserve">
+    <value>m</value>
+    <comment>Meters abbreviation</comment>
+  </data>
+  <data name="Unit_Feet" xml:space="preserve">
+    <value>ft</value>
+    <comment>Feet abbreviation (ICAO standard)</comment>
+  </data>
+  <data name="Unit_Degrees" xml:space="preserve">
+    <value>°</value>
+    <comment>Degrees symbol</comment>
+  </data>
+
+  <!-- Reset Button -->
+  <data name="Button_Reset" xml:space="preserve">
+    <value>1x</value>
+    <comment>Sim rate reset button label</comment>
+  </data>
+
+  <!-- Joystick Capture -->
+  <data name="Joystick_PressAnyButton" xml:space="preserve">
+    <value>Appuyez sur n'importe quel bouton du joystick...</value>
+    <comment>Overlay message when waiting for joystick button press</comment>
+  </data>
+  <data name="Joystick_ButtonCaptured" xml:space="preserve">
+    <value>✓ Bouton {0} capturé !</value>
+    <comment>Success message after capturing joystick button. {0} is the button number</comment>
+  </data>
+
+  <!-- Context Menu - Display Submenu -->
+  <data name="Menu_Display" xml:space="preserve">
+    <value>Affichage</value>
+    <comment>Display submenu header</comment>
+  </data>
+  <data name="Menu_Display_SimRate" xml:space="preserve">
+    <value>Taux de simulation</value>
+    <comment>Toggle sim rate display visibility</comment>
+  </data>
+  <data name="Menu_Display_GroundSpeed" xml:space="preserve">
+    <value>Ground Speed</value>
+    <comment>Toggle ground speed display visibility (ICAO standard)</comment>
+  </data>
+  <data name="Menu_Display_AGL" xml:space="preserve">
+    <value>AGL</value>
+    <comment>Toggle AGL display visibility (ICAO standard)</comment>
+  </data>
+  <data name="Menu_Display_GlideSlope" xml:space="preserve">
+    <value>Glide Slope</value>
+    <comment>Toggle glide slope display visibility (ICAO standard)</comment>
+  </data>
+  <data name="Menu_Display_Wind" xml:space="preserve">
+    <value>Vent</value>
+    <comment>Toggle wind display visibility</comment>
+  </data>
+
+  <!-- Context Menu - Opacity -->
+  <data name="Menu_Opacity" xml:space="preserve">
+    <value>Opacité</value>
+    <comment>Opacity submenu header</comment>
+  </data>
+
+  <!-- Context Menu - Polling Rate -->
+  <data name="Menu_PollingRate" xml:space="preserve">
+    <value>Taux de rafraîchissement</value>
+    <comment>Polling rate submenu header</comment>
+  </data>
+  <data name="Menu_PollingRate_250ms" xml:space="preserve">
+    <value>250ms (peut affecter les performances)</value>
+    <comment>250ms polling rate option</comment>
+  </data>
+  <data name="Menu_PollingRate_500ms" xml:space="preserve">
+    <value>500ms (rapide)</value>
+    <comment>500ms polling rate option</comment>
+  </data>
+  <data name="Menu_PollingRate_750ms" xml:space="preserve">
+    <value>750ms</value>
+    <comment>750ms polling rate option</comment>
+  </data>
+  <data name="Menu_PollingRate_1000ms" xml:space="preserve">
+    <value>1000ms</value>
+    <comment>1000ms polling rate option</comment>
+  </data>
+  <data name="Menu_PollingRate_2000ms" xml:space="preserve">
+    <value>2000ms (lent)</value>
+    <comment>2000ms polling rate option</comment>
+  </data>
+
+  <!-- Context Menu - Joystick -->
+  <data name="Menu_JoystickDevice" xml:space="preserve">
+    <value>Périphérique joystick</value>
+    <comment>Joystick device submenu header</comment>
+  </data>
+  <data name="Menu_Joystick_NoDevices" xml:space="preserve">
+    <value>Aucun périphérique trouvé</value>
+    <comment>Message when no joystick devices are detected</comment>
+  </data>
+  <data name="Menu_Joystick_SelectDeviceFirst" xml:space="preserve">
+    <value>Sélectionnez d'abord un périphérique joystick</value>
+    <comment>Message shown when trying to configure button without selecting device</comment>
+  </data>
+  <data name="Menu_Joystick_SetButton" xml:space="preserve">
+    <value>Définir le bouton du joystick (cliquez pour configurer)</value>
+    <comment>Menu item to begin joystick button configuration</comment>
+  </data>
+  <data name="Menu_Joystick_ButtonConfigured" xml:space="preserve">
+    <value>Bouton du joystick : {0} (cliquez pour modifier)</value>
+    <comment>Menu item showing configured button number. {0} is the button number</comment>
+  </data>
+  <data name="Menu_Joystick_ChangeButton" xml:space="preserve">
+    <value>Modifier le bouton</value>
+    <comment>Submenu option to change configured button</comment>
+  </data>
+  <data name="Menu_Joystick_ClearButton" xml:space="preserve">
+    <value>Effacer le bouton</value>
+    <comment>Submenu option to clear configured button</comment>
+  </data>
+
+  <!-- Context Menu - Torque Limiter -->
+  <data name="Menu_TorqueLimiter" xml:space="preserve">
+    <value>Limiteur de couple</value>
+    <comment>Torque limiter submenu header</comment>
+  </data>
+  <data name="Menu_TorqueLimiter_Enable" xml:space="preserve">
+    <value>Activer le limiteur de couple</value>
+    <comment>Toggle to enable/disable torque limiter feature</comment>
+  </data>
+  <data name="Menu_TorqueLimiter_ShowDisplay" xml:space="preserve">
+    <value>Afficher l'indicateur de couple</value>
+    <comment>Toggle torque display visibility</comment>
+  </data>
+  <data name="Menu_TorqueLimiter_MaxTorque" xml:space="preserve">
+    <value>Couple max. : {0}% (cliquez pour ajuster)</value>
+    <comment>Maximum torque percentage setting. {0} is the percentage value</comment>
+  </data>
+  <data name="Menu_TorqueLimiter_WarningThreshold" xml:space="preserve">
+    <value>Seuil d'avertissement : {0}% (cliquez pour ajuster)</value>
+    <comment>Warning threshold percentage setting. {0} is the percentage value</comment>
+  </data>
+  <data name="Menu_TorqueLimiter_ReductionAggression" xml:space="preserve">
+    <value>Agressivité de réduction : {0:F2} (cliquez pour ajuster)</value>
+    <comment>Throttle reduction aggression multiplier setting. {0:F2} is the decimal value formatted to 2 decimal places</comment>
+  </data>
+  <data name="Menu_TorqueLimiter_MinThrottle" xml:space="preserve">
+    <value>Gaz minimum : {0}% (cliquez pour ajuster)</value>
+    <comment>Minimum throttle percentage setting. {0} is the percentage value</comment>
+  </data>
+  <data name="Menu_TorqueLimiter_Cooldown" xml:space="preserve">
+    <value>Délai entre interventions : {0}ms (cliquez pour ajuster)</value>
+    <comment>Intervention cooldown time in milliseconds. {0} is the millisecond value</comment>
+  </data>
+  <data name="Menu_TorqueLimiter_Interventions" xml:space="preserve">
+    <value>Interventions : {0}</value>
+    <comment>Number of throttle interventions performed. {0} is the count</comment>
+  </data>
+
+  <!-- Context Menu - Units -->
+  <data name="Menu_Units" xml:space="preserve">
+    <value>Unités</value>
+    <comment>Units submenu header</comment>
+  </data>
+  <data name="Menu_Units_SpeedUnit" xml:space="preserve">
+    <value>Unité de vitesse</value>
+    <comment>Speed unit submenu header</comment>
+  </data>
+  <data name="Menu_Units_AltitudeUnit" xml:space="preserve">
+    <value>Unité d'altitude</value>
+    <comment>Altitude unit submenu header</comment>
+  </data>
+  <data name="Menu_Units_Speed_Knots" xml:space="preserve">
+    <value>Nœuds (kts) - Standard OACI</value>
+    <comment>Knots speed unit option</comment>
+  </data>
+  <data name="Menu_Units_Speed_KMH" xml:space="preserve">
+    <value>Kilomètres par heure (km/h)</value>
+    <comment>Kilometers per hour speed unit option</comment>
+  </data>
+  <data name="Menu_Units_Speed_MPH" xml:space="preserve">
+    <value>Miles par heure (mph)</value>
+    <comment>Miles per hour speed unit option</comment>
+  </data>
+  <data name="Menu_Units_Altitude_Feet" xml:space="preserve">
+    <value>Pieds (ft) - Standard OACI</value>
+    <comment>Feet altitude unit option</comment>
+  </data>
+  <data name="Menu_Units_Altitude_Meters" xml:space="preserve">
+    <value>Mètres (m)</value>
+    <comment>Meters altitude unit option</comment>
+  </data>
+
+  <!-- Context Menu - Language -->
+  <data name="Menu_Language" xml:space="preserve">
+    <value>Langue</value>
+    <comment>Language selection submenu header</comment>
+  </data>
+  <data name="Menu_Language_English" xml:space="preserve">
+    <value>English</value>
+    <comment>English language option</comment>
+  </data>
+  <data name="Menu_Language_German" xml:space="preserve">
+    <value>Deutsch</value>
+    <comment>German language option</comment>
+  </data>
+  <data name="Menu_Language_French" xml:space="preserve">
+    <value>Français</value>
+    <comment>French language option</comment>
+  </data>
+  <data name="Menu_Language_Chinese" xml:space="preserve">
+    <value>中文</value>
+    <comment>Chinese language option</comment>
+  </data>
+  <data name="Menu_Language_Spanish" xml:space="preserve">
+    <value>Español</value>
+    <comment>Spanish language option</comment>
+  </data>
+  <data name="Menu_Language_RestartRequired" xml:space="preserve">
+    <value>La langue passera en {0} après le redémarrage. Redémarrer maintenant ?</value>
+    <comment>Prompt shown when changing language. {0} is the language name</comment>
+  </data>
+  <data name="Menu_Language_RestartTitle" xml:space="preserve">
+    <value>Redémarrage requis</value>
+    <comment>Title for language restart prompt dialog</comment>
+  </data>
+
+  <!-- Context Menu - Other -->
+  <data name="Menu_About" xml:space="preserve">
+    <value>À propos</value>
+    <comment>About menu item</comment>
+  </data>
+  <data name="Menu_Exit" xml:space="preserve">
+    <value>Quitter</value>
+    <comment>Exit menu item</comment>
+  </data>
+
+  <!-- About Window -->
+  <data name="About_Title" xml:space="preserve">
+    <value>SimRate Sharp</value>
+    <comment>Application title in About window</comment>
+  </data>
+  <data name="About_Subtitle" xml:space="preserve">
+    <value>Moniteur et contrôle du taux de simulation pour MSFS</value>
+    <comment>Application subtitle in About window</comment>
+  </data>
+  <data name="About_Description" xml:space="preserve">
+    <value>Une superposition pour surveiller et réinitialiser le taux de simulation dans Microsoft Flight Simulator 2024</value>
+    <comment>Application description in About window</comment>
+  </data>
+  <data name="About_ViewOnGitHub" xml:space="preserve">
+    <value>Voir sur GitHub</value>
+    <comment>GitHub link text in About window</comment>
+  </data>
+  <data name="About_Close" xml:space="preserve">
+    <value>Fermer</value>
+    <comment>Close button in About window</comment>
+  </data>
+
+  <!-- Input Dialogs - Max Torque -->
+  <data name="Dialog_MaxTorque_Title" xml:space="preserve">
+    <value>Configurer le couple max. (%)</value>
+    <comment>Title for max torque configuration dialog</comment>
+  </data>
+  <data name="Dialog_MaxTorque_Prompt" xml:space="preserve">
+    <value>Entrez la limite de couple maximale en pourcentage du maximum nominal :
+
+Actuel : {0}%
+
+Valeurs courantes :
+• 100% = Maximum nominal (ligne rouge)
+• 95% = Limite prudente
+• 90% = Fonctionnement continu sûr
+• 105% = Autoriser de brèves excursions au-delà de la ligne rouge</value>
+    <comment>Prompt for max torque configuration. {0} is the current value</comment>
+  </data>
+
+  <!-- Input Dialogs - Warning Threshold -->
+  <data name="Dialog_WarningThreshold_Title" xml:space="preserve">
+    <value>Seuil d'avertissement (%)</value>
+    <comment>Title for warning threshold configuration dialog</comment>
+  </data>
+  <data name="Dialog_WarningThreshold_Prompt" xml:space="preserve">
+    <value>Entrez le seuil d'avertissement (couleur jaune) en pourcentage :
+
+Actuel : {0}%
+
+C'est le moment où les barres deviennent jaunes avant d'atteindre la limite rouge.
+Typique : 90-95%</value>
+    <comment>Prompt for warning threshold configuration. {0} is the current value</comment>
+  </data>
+
+  <!-- Input Dialogs - Reduction Aggression -->
+  <data name="Dialog_ReductionAggression_Title" xml:space="preserve">
+    <value>Agressivité de réduction</value>
+    <comment>Title for reduction aggression configuration dialog</comment>
+  </data>
+  <data name="Dialog_ReductionAggression_Prompt" xml:space="preserve">
+    <value>Entrez le multiplicateur d'agressivité de réduction des gaz :
+
+Actuel : {0:F2}
+
+Fonctionnement :
+• 8% de surcouple × 2,5x = 20% de réduction des gaz
+• Plus élevé = réductions plus agressives
+• Plus bas = réductions plus douces
+
+Plage typique : 1,5 - 4,0</value>
+    <comment>Prompt for reduction aggression configuration. {0:F2} is the current value formatted to 2 decimals</comment>
+  </data>
+
+  <!-- Input Dialogs - Minimum Throttle -->
+  <data name="Dialog_MinThrottle_Title" xml:space="preserve">
+    <value>Gaz minimum (%)</value>
+    <comment>Title for minimum throttle configuration dialog</comment>
+  </data>
+  <data name="Dialog_MinThrottle_Prompt" xml:space="preserve">
+    <value>Entrez le plancher minimum des gaz (limite de sécurité) :
+
+Actuel : {0}%
+
+Le système ne réduira jamais les gaz en dessous de cette valeur pour éviter le décrochage.
+Typique : 30-50%</value>
+    <comment>Prompt for minimum throttle configuration. {0} is the current value</comment>
+  </data>
+
+  <!-- Input Dialogs - Intervention Cooldown -->
+  <data name="Dialog_Cooldown_Title" xml:space="preserve">
+    <value>Délai entre interventions (ms)</value>
+    <comment>Title for intervention cooldown configuration dialog</comment>
+  </data>
+  <data name="Dialog_Cooldown_Prompt" xml:space="preserve">
+    <value>Entrez le temps entre les interventions sur les gaz (millisecondes) :
+
+Actuel : {0}ms
+
+Cela permet au moteur/hélice de se stabiliser entre les corrections.
+Recommandé :
+• 1000ms (1 sec) = réponse rapide
+• 2000ms (2 sec) = équilibré
+• 3000ms (3 sec) = conservateur</value>
+    <comment>Prompt for intervention cooldown configuration. {0} is the current value</comment>
+  </data>
+
+  <!-- Error Messages -->
+  <data name="Error_FatalError" xml:space="preserve">
+    <value>Erreur fatale : {0}</value>
+    <comment>Fatal error message. {0} is the exception details</comment>
+  </data>
+  <data name="Error_ApplicationError" xml:space="preserve">
+    <value>Erreur d'application</value>
+    <comment>Application error dialog title</comment>
+  </data>
+  <data name="Error_UnhandledException" xml:space="preserve">
+    <value>Exception non gérée : {0}
+
+{1}</value>
+    <comment>Unhandled exception message. {0} is the exception message, {1} is the stack trace</comment>
+  </data>
+  <data name="Error_JoystickDevice" xml:space="preserve">
+    <value>Erreur de périphérique joystick :
+
+{0}
+
+L'application ne peut pas lire depuis le périphérique joystick configuré.</value>
+    <comment>Joystick device error message. {0} is the error details</comment>
+  </data>
+  <data name="Error_JoystickTitle" xml:space="preserve">
+    <value>Erreur de joystick</value>
+    <comment>Joystick error dialog title</comment>
+  </data>
+  <data name="Error_BrowserOpen" xml:space="preserve">
+    <value>Impossible d'ouvrir le navigateur : {0}</value>
+    <comment>Browser open error message. {0} is the error details</comment>
+  </data>
+  <data name="Error_Title" xml:space="preserve">
+    <value>Erreur</value>
+    <comment>Generic error dialog title</comment>
+  </data>
+</root>

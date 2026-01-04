@@ -50,6 +50,10 @@ public partial class App : Application
         Logger.Initialize(debugMode);
         Logger.WriteLine($"SimRate Sharp starting (Debug Mode: {debugMode})");
 
+        // Load settings and initialize localization
+        var settings = Settings.Load();
+        LocalizationManager.Initialize(settings);
+
         // Global exception handlers
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         DispatcherUnhandledException += App_DispatcherUnhandledException;
@@ -58,14 +62,21 @@ public partial class App : Application
     private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         LogException(e.ExceptionObject as Exception, "AppDomain.UnhandledException");
-        MessageBox.Show($"Fatal error: {e.ExceptionObject}", "Application Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show(
+            string.Format(SimRateSharp.Resources.Strings.Error_FatalError, e.ExceptionObject),
+            SimRateSharp.Resources.Strings.Error_ApplicationError,
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
     }
 
     private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         LogException(e.Exception, "Dispatcher.UnhandledException");
-        MessageBox.Show($"Unhandled exception: {e.Exception.Message}\n\n{e.Exception.StackTrace}",
-            "Application Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show(
+            string.Format(SimRateSharp.Resources.Strings.Error_UnhandledException, e.Exception.Message, e.Exception.StackTrace),
+            SimRateSharp.Resources.Strings.Error_ApplicationError,
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
         e.Handled = true;
     }
 

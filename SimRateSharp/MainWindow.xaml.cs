@@ -52,12 +52,32 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        // Initialize localized UI text
+        InitializeLocalizedText();
+
         // Load settings
         _settings = Settings.Load();
         ApplySettings();
 
         Loaded += MainWindow_Loaded;
         Closing += MainWindow_Closing;
+    }
+
+    private void InitializeLocalizedText()
+    {
+        // Update panel headers with localized text
+        SimRatePanelHeader.Text = SimRateSharp.Resources.Strings.Panel_SimRate;
+        GroundSpeedPanelHeader.Text = SimRateSharp.Resources.Strings.Panel_GroundSpeed;
+        AGLPanelHeader.Text = SimRateSharp.Resources.Strings.Panel_AGL;
+        GlideSlopePanelHeader.Text = SimRateSharp.Resources.Strings.Panel_Glide;
+        WindPanelHeader.Text = SimRateSharp.Resources.Strings.Panel_Wind;
+        TorquePanelHeader.Text = SimRateSharp.Resources.Strings.Panel_Torque;
+
+        // Update capture overlay text
+        CaptureOverlayText.Text = SimRateSharp.Resources.Strings.Joystick_PressAnyButton;
+
+        // Update reset button
+        ResetButton.Content = SimRateSharp.Resources.Strings.Button_Reset;
     }
 
     private void ApplySettings()
@@ -116,25 +136,25 @@ public partial class MainWindow : Window
         var contextMenu = new ContextMenu();
 
         // Display visibility submenu
-        var displayMenuItem = new MenuItem { Header = "Display" };
+        var displayMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Display };
 
-        var simRateItem = new MenuItem { Header = "Sim Rate", IsCheckable = true, IsChecked = _settings.ShowSimRate };
+        var simRateItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Display_SimRate, IsCheckable = true, IsChecked = _settings.ShowSimRate };
         simRateItem.Click += (s, e) => ToggleDisplay("SimRate", simRateItem.IsChecked);
         displayMenuItem.Items.Add(simRateItem);
 
-        var groundSpeedItem = new MenuItem { Header = "Ground Speed", IsCheckable = true, IsChecked = _settings.ShowGroundSpeed };
+        var groundSpeedItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Display_GroundSpeed, IsCheckable = true, IsChecked = _settings.ShowGroundSpeed };
         groundSpeedItem.Click += (s, e) => ToggleDisplay("GroundSpeed", groundSpeedItem.IsChecked);
         displayMenuItem.Items.Add(groundSpeedItem);
 
-        var aglItem = new MenuItem { Header = "AGL", IsCheckable = true, IsChecked = _settings.ShowAGL };
+        var aglItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Display_AGL, IsCheckable = true, IsChecked = _settings.ShowAGL };
         aglItem.Click += (s, e) => ToggleDisplay("AGL", aglItem.IsChecked);
         displayMenuItem.Items.Add(aglItem);
 
-        var glideSlopeItem = new MenuItem { Header = "Glide Slope", IsCheckable = true, IsChecked = _settings.ShowGlideSlope };
+        var glideSlopeItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Display_GlideSlope, IsCheckable = true, IsChecked = _settings.ShowGlideSlope };
         glideSlopeItem.Click += (s, e) => ToggleDisplay("GlideSlope", glideSlopeItem.IsChecked);
         displayMenuItem.Items.Add(glideSlopeItem);
 
-        var windItem = new MenuItem { Header = "Wind", IsCheckable = true, IsChecked = _settings.ShowWind };
+        var windItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Display_Wind, IsCheckable = true, IsChecked = _settings.ShowWind };
         windItem.Click += (s, e) => ToggleDisplay("Wind", windItem.IsChecked);
         displayMenuItem.Items.Add(windItem);
 
@@ -143,7 +163,7 @@ public partial class MainWindow : Window
         contextMenu.Items.Add(new Separator());
 
         // Opacity submenu
-        var opacityMenuItem = new MenuItem { Header = "Opacity" };
+        var opacityMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Opacity };
         foreach (var opacity in new[] { 20, 40, 60, 80, 100 })
         {
             var item = new MenuItem { Header = $"{opacity}%" };
@@ -153,14 +173,14 @@ public partial class MainWindow : Window
         contextMenu.Items.Add(opacityMenuItem);
 
         // Polling rate submenu
-        var pollingMenuItem = new MenuItem { Header = "Polling Rate" };
+        var pollingMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_PollingRate };
         var pollingRates = new[]
         {
-            (250, "250ms (may impact performance)"),
-            (500, "500ms (fast)"),
-            (750, "750ms"),
-            (1000, "1000ms"),
-            (2000, "2000ms (slow)")
+            (250, SimRateSharp.Resources.Strings.Menu_PollingRate_250ms),
+            (500, SimRateSharp.Resources.Strings.Menu_PollingRate_500ms),
+            (750, SimRateSharp.Resources.Strings.Menu_PollingRate_750ms),
+            (1000, SimRateSharp.Resources.Strings.Menu_PollingRate_1000ms),
+            (2000, SimRateSharp.Resources.Strings.Menu_PollingRate_2000ms)
         };
 
         foreach (var (ms, label) in pollingRates)
@@ -176,7 +196,7 @@ public partial class MainWindow : Window
         contextMenu.Items.Add(new Separator());
 
         // Joystick device selection
-        var deviceMenuItem = new MenuItem { Header = "Joystick Device" };
+        var deviceMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_JoystickDevice };
         var devices = _joystickManager?.GetAvailableDevices() ?? new List<string>();
 
         if (devices.Count > 0)
@@ -198,7 +218,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            var noDeviceItem = new MenuItem { Header = "No devices found", IsEnabled = false };
+            var noDeviceItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Joystick_NoDevices, IsEnabled = false };
             deviceMenuItem.Items.Add(noDeviceItem);
         }
         contextMenu.Items.Add(deviceMenuItem);
@@ -212,9 +232,9 @@ public partial class MainWindow : Window
         contextMenu.Items.Add(new Separator());
 
         // Torque Limiter submenu
-        var torqueMenuItem = new MenuItem { Header = "Torque Limiter" };
+        var torqueMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_TorqueLimiter };
 
-        var enableTorqueItem = new MenuItem { Header = "Enable Torque Limiter", IsCheckable = true, IsChecked = _settings.TorqueLimiterEnabled };
+        var enableTorqueItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_TorqueLimiter_Enable, IsCheckable = true, IsChecked = _settings.TorqueLimiterEnabled };
         enableTorqueItem.Click += (s, e) =>
         {
             _settings.TorqueLimiterEnabled = enableTorqueItem.IsChecked;
@@ -240,19 +260,19 @@ public partial class MainWindow : Window
         // Only show these options if torque limiter is enabled
         if (_settings.TorqueLimiterEnabled)
         {
-            var showTorqueItem = new MenuItem { Header = "Show Torque Display", IsCheckable = true, IsChecked = _settings.ShowTorque };
+            var showTorqueItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_TorqueLimiter_ShowDisplay, IsCheckable = true, IsChecked = _settings.ShowTorque };
             showTorqueItem.Click += (s, e) => ToggleDisplay("Torque", showTorqueItem.IsChecked);
             torqueMenuItem.Items.Add(showTorqueItem);
 
             torqueMenuItem.Items.Add(new Separator());
 
-            var configItem = new MenuItem { Header = $"Max Torque: {_settings.MaxTorquePercent:F0}% (click to adjust)" };
+            var configItem = new MenuItem { Header = string.Format(SimRateSharp.Resources.Strings.Menu_TorqueLimiter_MaxTorque, (int)_settings.MaxTorquePercent) };
             configItem.Click += (s, e) =>
             {
                 // Simple prompt for now - could create a dialog later
                 var result = Microsoft.VisualBasic.Interaction.InputBox(
-                    $"Enter maximum torque limit as percentage of aircraft's rated max:\n\nCurrent: {_settings.MaxTorquePercent:F0}%\n\nCommon values:\n• 100% = Rated maximum (redline)\n• 95% = Conservative limit\n• 90% = Safe continuous operation\n• 105% = Allow brief excursions above redline",
-                    "Configure Max Torque %",
+                    string.Format(SimRateSharp.Resources.Strings.Dialog_MaxTorque_Prompt, _settings.MaxTorquePercent),
+                    SimRateSharp.Resources.Strings.Dialog_MaxTorque_Title,
                     _settings.MaxTorquePercent.ToString()
                 );
 
@@ -270,12 +290,12 @@ public partial class MainWindow : Window
             torqueMenuItem.Items.Add(configItem);
 
             // Warning Threshold
-            var warningItem = new MenuItem { Header = $"Warning Threshold: {(_settings.TorqueWarningThreshold * 100):F0}% (click to adjust)" };
+            var warningItem = new MenuItem { Header = string.Format(SimRateSharp.Resources.Strings.Menu_TorqueLimiter_WarningThreshold, (int)(_settings.TorqueWarningThreshold * 100)) };
             warningItem.Click += (s, e) =>
             {
                 var result = Microsoft.VisualBasic.Interaction.InputBox(
-                    $"Enter warning threshold (yellow color) as percentage:\n\nCurrent: {(_settings.TorqueWarningThreshold * 100):F0}%\n\nThis is when bars turn yellow before hitting the red limit.\n\nTypical: 90-95%",
-                    "Warning Threshold %",
+                    string.Format(SimRateSharp.Resources.Strings.Dialog_WarningThreshold_Prompt, (_settings.TorqueWarningThreshold * 100)),
+                    SimRateSharp.Resources.Strings.Dialog_WarningThreshold_Title,
                     (_settings.TorqueWarningThreshold * 100).ToString()
                 );
 
@@ -295,12 +315,12 @@ public partial class MainWindow : Window
             torqueMenuItem.Items.Add(new Separator());
 
             // Throttle Reduction Aggression
-            var aggressionItem = new MenuItem { Header = $"Reduction Aggression: {_settings.ThrottleReductionAggression:F1}x (click to adjust)" };
+            var aggressionItem = new MenuItem { Header = string.Format(SimRateSharp.Resources.Strings.Menu_TorqueLimiter_ReductionAggression, _settings.ThrottleReductionAggression) };
             aggressionItem.Click += (s, e) =>
             {
                 var result = Microsoft.VisualBasic.Interaction.InputBox(
-                    $"Enter throttle reduction aggression multiplier:\n\nCurrent: {_settings.ThrottleReductionAggression:F1}x\n\nHow this works:\n• 8% overtorque × 2.5x = 20% throttle reduction\n• Higher = more aggressive cuts\n• Lower = gentler reductions\n\nTypical range: 1.5 - 4.0",
-                    "Reduction Aggression",
+                    string.Format(SimRateSharp.Resources.Strings.Dialog_ReductionAggression_Prompt, _settings.ThrottleReductionAggression),
+                    SimRateSharp.Resources.Strings.Dialog_ReductionAggression_Title,
                     _settings.ThrottleReductionAggression.ToString()
                 );
 
@@ -318,12 +338,12 @@ public partial class MainWindow : Window
             torqueMenuItem.Items.Add(aggressionItem);
 
             // Minimum Throttle Floor
-            var minThrottleItem = new MenuItem { Header = $"Minimum Throttle: {_settings.MinThrottlePercent:F0}% (click to adjust)" };
+            var minThrottleItem = new MenuItem { Header = string.Format(SimRateSharp.Resources.Strings.Menu_TorqueLimiter_MinThrottle, (int)_settings.MinThrottlePercent) };
             minThrottleItem.Click += (s, e) =>
             {
                 var result = Microsoft.VisualBasic.Interaction.InputBox(
-                    $"Enter minimum throttle floor (safety limit):\n\nCurrent: {_settings.MinThrottlePercent:F0}%\n\nThe system will never reduce throttle below this value to prevent stalling.\n\nTypical: 30-50%",
-                    "Minimum Throttle %",
+                    string.Format(SimRateSharp.Resources.Strings.Dialog_MinThrottle_Prompt, _settings.MinThrottlePercent),
+                    SimRateSharp.Resources.Strings.Dialog_MinThrottle_Title,
                     _settings.MinThrottlePercent.ToString()
                 );
 
@@ -341,12 +361,12 @@ public partial class MainWindow : Window
             torqueMenuItem.Items.Add(minThrottleItem);
 
             // Intervention Cooldown
-            var cooldownItem = new MenuItem { Header = $"Intervention Cooldown: {_settings.InterventionCooldownMs}ms (click to adjust)" };
+            var cooldownItem = new MenuItem { Header = string.Format(SimRateSharp.Resources.Strings.Menu_TorqueLimiter_Cooldown, _settings.InterventionCooldownMs) };
             cooldownItem.Click += (s, e) =>
             {
                 var result = Microsoft.VisualBasic.Interaction.InputBox(
-                    $"Enter time between throttle interventions (milliseconds):\n\nCurrent: {_settings.InterventionCooldownMs}ms\n\nThis allows engine/prop to stabilize between corrections.\n\nRecommended:\n• 1000ms (1 sec) = fast response\n• 2000ms (2 sec) = balanced\n• 3000ms (3 sec) = conservative",
-                    "Intervention Cooldown (ms)",
+                    string.Format(SimRateSharp.Resources.Strings.Dialog_Cooldown_Prompt, _settings.InterventionCooldownMs),
+                    SimRateSharp.Resources.Strings.Dialog_Cooldown_Title,
                     _settings.InterventionCooldownMs.ToString()
                 );
 
@@ -365,7 +385,7 @@ public partial class MainWindow : Window
 
             torqueMenuItem.Items.Add(new Separator());
 
-            var interventionInfo = new MenuItem { Header = $"Interventions: {_torqueLimiter?.GetInterventionCount() ?? 0}", IsEnabled = false };
+            var interventionInfo = new MenuItem { Header = string.Format(SimRateSharp.Resources.Strings.Menu_TorqueLimiter_Interventions, _torqueLimiter?.GetInterventionCount() ?? 0), IsEnabled = false };
             torqueMenuItem.Items.Add(interventionInfo);
         }
 
@@ -373,17 +393,151 @@ public partial class MainWindow : Window
 
         contextMenu.Items.Add(new Separator());
 
+        // Units selection submenu
+        var unitsMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Units };
+
+        // Speed Unit submenu
+        var speedUnitMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Units_SpeedUnit };
+
+        var knotsItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Units_Speed_Knots };
+        knotsItem.Click += (s, e) => ChangeSpeedUnit(SpeedUnit.Knots);
+        if (_settings.SpeedUnit == SpeedUnit.Knots) knotsItem.IsChecked = true;
+        speedUnitMenuItem.Items.Add(knotsItem);
+
+        var kmhItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Units_Speed_KMH };
+        kmhItem.Click += (s, e) => ChangeSpeedUnit(SpeedUnit.KilometersPerHour);
+        if (_settings.SpeedUnit == SpeedUnit.KilometersPerHour) kmhItem.IsChecked = true;
+        speedUnitMenuItem.Items.Add(kmhItem);
+
+        var mphItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Units_Speed_MPH };
+        mphItem.Click += (s, e) => ChangeSpeedUnit(SpeedUnit.MilesPerHour);
+        if (_settings.SpeedUnit == SpeedUnit.MilesPerHour) mphItem.IsChecked = true;
+        speedUnitMenuItem.Items.Add(mphItem);
+
+        unitsMenuItem.Items.Add(speedUnitMenuItem);
+
+        // Altitude Unit submenu
+        var altitudeUnitMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Units_AltitudeUnit };
+
+        var feetItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Units_Altitude_Feet };
+        feetItem.Click += (s, e) => ChangeAltitudeUnit(AltitudeUnit.Feet);
+        if (_settings.AltitudeUnit == AltitudeUnit.Feet) feetItem.IsChecked = true;
+        altitudeUnitMenuItem.Items.Add(feetItem);
+
+        var metersItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Units_Altitude_Meters };
+        metersItem.Click += (s, e) => ChangeAltitudeUnit(AltitudeUnit.Meters);
+        if (_settings.AltitudeUnit == AltitudeUnit.Meters) metersItem.IsChecked = true;
+        altitudeUnitMenuItem.Items.Add(metersItem);
+
+        unitsMenuItem.Items.Add(altitudeUnitMenuItem);
+
+        contextMenu.Items.Add(unitsMenuItem);
+
+        contextMenu.Items.Add(new Separator());
+
+        // Language selection submenu
+        var languageMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Language };
+
+        var englishItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Language_English };
+        englishItem.Click += (s, e) => ChangeLanguage("en", "English");
+        if (LocalizationManager.GetCurrentLanguage() == "en") englishItem.IsChecked = true;
+        languageMenuItem.Items.Add(englishItem);
+
+        var germanItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Language_German };
+        germanItem.Click += (s, e) => ChangeLanguage("de", "Deutsch");
+        if (LocalizationManager.GetCurrentLanguage() == "de") germanItem.IsChecked = true;
+        languageMenuItem.Items.Add(germanItem);
+
+        var frenchItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Language_French };
+        frenchItem.Click += (s, e) => ChangeLanguage("fr", "Français");
+        if (LocalizationManager.GetCurrentLanguage() == "fr") frenchItem.IsChecked = true;
+        languageMenuItem.Items.Add(frenchItem);
+
+        var chineseItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Language_Chinese };
+        chineseItem.Click += (s, e) => ChangeLanguage("zh-CN", "中文");
+        if (LocalizationManager.GetCurrentLanguage() == "zh-cn") chineseItem.IsChecked = true;
+        languageMenuItem.Items.Add(chineseItem);
+
+        var spanishItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Language_Spanish };
+        spanishItem.Click += (s, e) => ChangeLanguage("es", "Español");
+        if (LocalizationManager.GetCurrentLanguage() == "es") spanishItem.IsChecked = true;
+        languageMenuItem.Items.Add(spanishItem);
+
+        contextMenu.Items.Add(languageMenuItem);
+
+        contextMenu.Items.Add(new Separator());
+
         // About
-        var aboutMenuItem = new MenuItem { Header = "About" };
+        var aboutMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_About };
         aboutMenuItem.Click += AboutMenuItem_Click;
         contextMenu.Items.Add(aboutMenuItem);
 
         // Exit
-        var exitMenuItem = new MenuItem { Header = "Exit" };
+        var exitMenuItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Exit };
         exitMenuItem.Click += (s, e) => Close();
         contextMenu.Items.Add(exitMenuItem);
 
         MainBorder.ContextMenu = contextMenu;
+    }
+
+    private void ChangeLanguage(string languageCode, string languageName)
+    {
+        _settings.Language = languageCode;
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save language setting");
+        }
+
+        var result = MessageBox.Show(
+            string.Format(SimRateSharp.Resources.Strings.Menu_Language_RestartRequired, languageName),
+            SimRateSharp.Resources.Strings.Menu_Language_RestartTitle,
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            var processPath = Environment.ProcessPath;
+            if (processPath != null)
+            {
+                System.Diagnostics.Process.Start(processPath);
+                Application.Current.Shutdown();
+            }
+        }
+    }
+
+    private void ChangeSpeedUnit(SpeedUnit unit)
+    {
+        _settings.SpeedUnit = unit;
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save speed unit setting");
+        }
+
+        // Force update of display with new units
+        _lastGroundSpeed = -1;
+        _lastWindSpeed = -1;
+
+        // Rebuild context menu to update checkmarks
+        CreateContextMenu();
+
+        Logger.WriteLine($"[MainWindow] Speed unit changed to: {unit}");
+    }
+
+    private void ChangeAltitudeUnit(AltitudeUnit unit)
+    {
+        _settings.AltitudeUnit = unit;
+        if (!_settings.Save())
+        {
+            Logger.WriteLine("[MainWindow] Warning: Failed to save altitude unit setting");
+        }
+
+        // Force update of display with new units
+        _lastAGL = -1;
+
+        // Rebuild context menu to update checkmarks
+        CreateContextMenu();
+
+        Logger.WriteLine($"[MainWindow] Altitude unit changed to: {unit}");
     }
 
     private void SelectJoystickDevice(int deviceIndex)
@@ -418,17 +572,17 @@ public partial class MainWindow : Window
 
         if (!deviceIndex.HasValue)
         {
-            menuItem.Header = "Select Joystick Device First";
+            menuItem.Header = SimRateSharp.Resources.Strings.Menu_Joystick_SelectDeviceFirst;
             menuItem.IsEnabled = false;
         }
         else if (buttonNum.HasValue)
         {
-            menuItem.Header = $"Joystick Button: {buttonNum.Value} (click to change)";
+            menuItem.Header = string.Format(SimRateSharp.Resources.Strings.Menu_Joystick_ButtonConfigured, buttonNum.Value);
             menuItem.IsEnabled = true;
         }
         else
         {
-            menuItem.Header = "Set Joystick Button (click to configure)";
+            menuItem.Header = SimRateSharp.Resources.Strings.Menu_Joystick_SetButton;
             menuItem.IsEnabled = true;
         }
     }
@@ -442,11 +596,11 @@ public partial class MainWindow : Window
             // Already configured - show submenu to change or clear
             var contextMenu = new ContextMenu();
 
-            var changeItem = new MenuItem { Header = "Change Button" };
+            var changeItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Joystick_ChangeButton };
             changeItem.Click += (s, args) => StartButtonCapture(menuItem);
             contextMenu.Items.Add(changeItem);
 
-            var clearItem = new MenuItem { Header = "Clear Button" };
+            var clearItem = new MenuItem { Header = SimRateSharp.Resources.Strings.Menu_Joystick_ClearButton };
             clearItem.Click += (s, args) =>
             {
                 _settings.JoystickButton = null;
@@ -503,7 +657,7 @@ public partial class MainWindow : Window
             _joystickManager?.SetTriggerButton(buttonIndex);
 
             // Show success feedback
-            CaptureOverlayText.Text = $"✓ Button {buttonIndex} captured!";
+            CaptureOverlayText.Text = string.Format(SimRateSharp.Resources.Strings.Joystick_ButtonCaptured, buttonIndex);
             CaptureOverlayText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 136)); // Green
 
             // Wait 1 second before hiding overlay
@@ -659,8 +813,8 @@ public partial class MainWindow : Window
         Dispatcher.Invoke(() =>
         {
             Logger.ShowErrorWithLog(
-                $"Joystick device error:\n\n{errorMessage}\n\nThe application cannot read from the configured joystick device.",
-                "Joystick Error"
+                string.Format(SimRateSharp.Resources.Strings.Error_JoystickDevice, errorMessage),
+                SimRateSharp.Resources.Strings.Error_JoystickTitle
             );
         });
     }
@@ -758,13 +912,13 @@ public partial class MainWindow : Window
 
                 if (groundSpeed != _lastGroundSpeed)
                 {
-                    GroundSpeedTextBlock.Text = $"{groundSpeed:F0} kts";
+                    GroundSpeedTextBlock.Text = UnitConverter.FormatSpeed(groundSpeed, _settings.SpeedUnit);
                     _lastGroundSpeed = groundSpeed;
                 }
 
                 if (agl != _lastAGL)
                 {
-                    AGLTextBlock.Text = $"{agl:F0} ft";
+                    AGLTextBlock.Text = UnitConverter.FormatAltitude(agl, _settings.AltitudeUnit);
                     _lastAGL = agl;
                 }
 
@@ -776,7 +930,7 @@ public partial class MainWindow : Window
 
                 if (windSpeed != _lastWindSpeed)
                 {
-                    WindSpeedTextBlock.Text = $"{windSpeed:D2} kts";
+                    WindSpeedTextBlock.Text = UnitConverter.FormatSpeed(windSpeed, _settings.SpeedUnit);
                     _lastWindSpeed = windSpeed;
                 }
 
@@ -802,10 +956,10 @@ public partial class MainWindow : Window
             if (!isConnected)
             {
                 SimRateTextBlock.Text = "--";
-                GroundSpeedTextBlock.Text = "-- kts";
-                AGLTextBlock.Text = "-- ft";
+                GroundSpeedTextBlock.Text = $"-- {UnitConverter.GetSpeedUnitLabel(_settings.SpeedUnit)}";
+                AGLTextBlock.Text = $"-- {UnitConverter.GetAltitudeUnitLabel(_settings.AltitudeUnit)}";
                 GlideSlopeTextBlock.Text = "--°";
-                WindSpeedTextBlock.Text = "-- kts";
+                WindSpeedTextBlock.Text = $"-- {UnitConverter.GetSpeedUnitLabel(_settings.SpeedUnit)}";
                 WindAngleTextBlock.Text = "--°";
 
                 // Reset cached values so first update after reconnect will show

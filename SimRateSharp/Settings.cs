@@ -49,6 +49,13 @@ public class Settings
     public double MinThrottlePercent { get; set; } = 40.0; // Never reduce throttle below this value (safety floor)
     public int InterventionCooldownMs { get; set; } = 2000; // Minimum time between interventions (allows engine/prop to stabilize - 2 seconds)
 
+    // Language setting (null = auto-detect from Windows, or "en", "de", "fr", "zh-CN", "es")
+    public string? Language { get; set; } = null;
+
+    // Unit system settings
+    public SpeedUnit SpeedUnit { get; set; } = SpeedUnit.Knots;
+    public AltitudeUnit AltitudeUnit { get; set; } = AltitudeUnit.Feet;
+
     private static string GetSettingsPath()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);

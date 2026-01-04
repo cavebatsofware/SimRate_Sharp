@@ -29,6 +29,13 @@ public partial class AboutWindow : Window
     {
         InitializeComponent();
 
+        // Set localized text
+        TitleText.Text = SimRateSharp.Resources.Strings.About_Title;
+        SubtitleText.Text = SimRateSharp.Resources.Strings.About_Subtitle;
+        DescriptionText.Text = SimRateSharp.Resources.Strings.About_Description;
+        GitHubLinkText.Text = SimRateSharp.Resources.Strings.About_ViewOnGitHub;
+        CloseButtonControl.Content = SimRateSharp.Resources.Strings.About_Close;
+
         // Get version from assembly
         var version = Assembly.GetExecutingAssembly().GetName().Version;
         if (version != null)
@@ -51,7 +58,11 @@ public partial class AboutWindow : Window
         catch (Exception ex)
         {
             Logger.WriteLine($"Failed to open GitHub link: {ex.Message}");
-            MessageBox.Show($"Could not open browser: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                string.Format(SimRateSharp.Resources.Strings.Error_BrowserOpen, ex.Message),
+                SimRateSharp.Resources.Strings.Error_Title,
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 
