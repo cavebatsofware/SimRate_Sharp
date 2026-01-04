@@ -22,6 +22,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SimRateSharp"
+        xmlns:res="clr-namespace:SimRateSharp.Resources"
         mc:Ignorable="d"
         Title="MSFS Sim Rate Monitor"
         SizeToContent="WidthAndHeight"
@@ -116,7 +117,8 @@
 
             <!-- Sim Rate Display with Reset Button -->
             <StackPanel x:Name="SimRatePanel" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
-                <TextBlock Text="⚡ SIM RATE"
+                <TextBlock x:Name="SimRatePanelHeader"
+                           Text="⚡ SIM RATE"
                            FontSize="10"
                            Foreground="#80FFFFFF"
                            HorizontalAlignment="Center"
@@ -157,7 +159,8 @@
 
             <!-- Ground Speed Display -->
             <StackPanel x:Name="GroundSpeedPanel" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
-                <TextBlock Text="🛫 GROUND SPEED"
+                <TextBlock x:Name="GroundSpeedPanelHeader"
+                           Text="🛫 GROUND SPEED"
                            FontSize="10"
                            Foreground="#80FFFFFF"
                            HorizontalAlignment="Center"
@@ -180,7 +183,8 @@
 
             <!-- AGL Display -->
             <StackPanel x:Name="AGLPanel" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
-                <TextBlock Text="📏 AGL"
+                <TextBlock x:Name="AGLPanelHeader"
+                           Text="📏 AGL"
                            FontSize="10"
                            Foreground="#80FFFFFF"
                            HorizontalAlignment="Center"
@@ -203,7 +207,8 @@
 
             <!-- Glide Slope Display -->
             <StackPanel x:Name="GlideSlopePanel" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
-                <TextBlock Text="📐 GLIDE"
+                <TextBlock x:Name="GlideSlopePanelHeader"
+                           Text="📐 GLIDE"
                            FontSize="10"
                            Foreground="#80FFFFFF"
                            HorizontalAlignment="Center"
@@ -226,7 +231,8 @@
 
             <!-- Wind Display -->
             <StackPanel x:Name="WindPanel" Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0">
-                <TextBlock Text="💨 WIND"
+                <TextBlock x:Name="WindPanelHeader"
+                           Text="💨 WIND"
                            FontSize="10"
                            Foreground="#80FFFFFF"
                            HorizontalAlignment="Center"
@@ -305,7 +311,8 @@
 
             <!-- Torque Display (hidden by default) - Vertical Bar Gauges -->
             <StackPanel x:Name="TorquePanel" Grid.Column="5" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" Margin="10,0">
-                <TextBlock Text="⚙️ TORQUE"
+                <TextBlock x:Name="TorquePanelHeader"
+                           Text="⚙️ TORQUE"
                            FontSize="10"
                            Foreground="#80FFFFFF"
                            HorizontalAlignment="Center"

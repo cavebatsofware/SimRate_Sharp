@@ -42,14 +42,16 @@
 
         <StackPanel>
             <!-- Title -->
-            <TextBlock Text="SimRate Sharp"
+            <TextBlock x:Name="TitleText"
+                       Text="SimRate Sharp"
                        FontSize="28"
                        FontWeight="Bold"
                        Foreground="White"
                        HorizontalAlignment="Center"
                        Margin="0,0,0,10"/>
 
-            <TextBlock Text="Sim Rate Monitor and Control for MSFS"
+            <TextBlock x:Name="SubtitleText"
+                       Text="Sim Rate Monitor and Control for MSFS"
                        FontSize="14"
                        Foreground="#B0B0B0"
                        HorizontalAlignment="Center"
@@ -71,15 +73,13 @@
                        Margin="0,0,0,10"/>
 
             <!-- Description -->
-            <TextBlock TextWrapping="Wrap"
+            <TextBlock x:Name="DescriptionText"
+                       TextWrapping="Wrap"
                        TextAlignment="Center"
                        FontSize="11"
                        Foreground="#A0A0A0"
-                       Margin="0,0,0,20">
-                <Run Text="An overlay for monitoring and resetting"/>
-                <LineBreak/>
-                <Run Text="simulation rate in Microsoft Flight Simulator 2024"/>
-            </TextBlock>
+                       Margin="0,0,0,20"
+                       Text="An overlay for monitoring and resetting simulation rate in Microsoft Flight Simulator 2024"/>
 
             <!-- GitHub Link -->
             <TextBlock HorizontalAlignment="Center"
@@ -89,12 +89,13 @@
                           RequestNavigate="GitHubLink_RequestNavigate"
                           Foreground="#00D9FF"
                           TextDecorations="None">
-                    <Run Text="View on GitHub"/>
+                    <Run x:Name="GitHubLinkText" Text="View on GitHub"/>
                 </Hyperlink>
             </TextBlock>
 
             <!-- Close Button -->
-            <Button Content="Close"
+            <Button x:Name="CloseButtonControl"
+                    Content="Close"
                     Width="100"
                     Height="30"
                     HorizontalAlignment="Center"
