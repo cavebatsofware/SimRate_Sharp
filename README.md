@@ -1,4 +1,4 @@
-# SimRate Sharp
+# [SimRate Sharp](https://flightsim.to/addon/101795/simrate-sharp)
 
 An overlay for monitoring and controlling simulation rate in **Microsoft Flight Simulator 2024**, with advanced engine protection features.
 
